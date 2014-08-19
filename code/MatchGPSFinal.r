@@ -193,7 +193,7 @@ dfValidCorresp <- subset(dfValidCorresp ,
 
 
 
-ValidationData <- ehealthdata[ehealthdata$name %in% matchEhealth$ehealth ,]
+ValidationData <- ehealthdata[ehealthdata$name %in% dfValidCorresp$ehealth ,]
 
 
 
@@ -203,7 +203,7 @@ ValidationData <- ehealthdata[ehealthdata$name %in% matchEhealth$ehealth ,]
 
 Validation <- function(TestedSet , ValidationSet){
   ValidData <- ValidationSet@data
-  ValidData <- merge(ValidData , matchEhealth , by.x = 'name' , by.y = 'ehealth' , all.y = FALSE)
+  ValidData <- merge(ValidData , dfValidCorresp , by.x = 'name' , by.y = 'ehealth' , all.y = FALSE)
   ValidData$data <- as.character(ValidData$data)
   TestedSet <- TestedSet[TestedSet@data$match %in% ValidData$data ,]
   
@@ -216,7 +216,7 @@ Validation <- function(TestedSet , ValidationSet){
   ValidCoords <- data.frame(match = ValidationSet$name ,
                             lateHealth = ValidationSet@coords[,1],
                             longeHealth = ValidationSet@coords[,2])
-  ValidCoords <- merge(ValidCoords , matchEhealth  , by.x = 'match' , by.y = 'ehealth' , all.y = FALSE)
+  ValidCoords <- merge(ValidCoords , dfValidCorresp  , by.x = 'match' , by.y = 'ehealth' , all.y = FALSE)
   
   Compare <- merge(ValidCoords , TestedCoords , by.x = 'data' , by.y = 'match') 
   dist <- pointDistance(cbind(Compare$lateHealth , Compare$longeHealth), 
@@ -232,7 +232,8 @@ CompareSet2 <- Validation(MatchStrat2 , ValidationData)
 CompareSet3 <- Validation(MatchStrat3 , ValidationData)
 
 
-
+#### Integrer les donnees de DNI or whatever , refaire la fonction validation pour la rendre plus generique,
+#### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
 
 #par(mfrow = c(1,1))
 #plot(CompareDHIS)
