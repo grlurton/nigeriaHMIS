@@ -228,6 +228,9 @@ Step3Out <- ddply(Step2NotMatched , .(geography) ,
 
 Step3Out <- subset(Step3Out , !is.na(DHISFacility))
 Step3Out <- Step3Out[Step3Out$DHISFacility %in% UniqueMatch(Step3Out , Step3Out$DHISFacility) , ]
+Step3Out <- merge(Step3Out , dhisInput , by.x = 'DHISFacility' , by.y = 'facility')
+Step3Out <- subset(Step3Out , select = c(DHISFacility , geography , SDIFacility , facilityID))
+colnames(Step3Out)[4] <- 'UnitId'
 
 MatchedFacilities <- rbind(Step1Out , Step2Out , Step3Out)
 
