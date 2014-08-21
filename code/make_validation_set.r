@@ -1,3 +1,6 @@
+library(maptools)
+library(plyr)
+
 setwd('J://Project/phc/nga/dhis')
 
 UniqueMatch <- function(data , indexVar){
@@ -48,6 +51,8 @@ colnames(DHISFacilities)[1] <- 'UnitID'
 
 
 ##Match eHealth with datasets from DHIS
+##Sratify by LGA !!!
+
 matchEhealthALL <- data.frame(ehealth = character() , data = character() , unitId = character())
 for(i in seq(nrow(ehealthdata))){
   out <- data.frame(ehealth = character() , data = character(), unitId = character())
@@ -76,6 +81,8 @@ ValidationData <- ehealthdata[ehealthdata$name %in% dfValidCorresp$ehealth ,]
 ValidationData@data <- merge(ValidationData@data , dfValidCorresp , by.x = 'name' ,
                              by.y = 'ehealth' , sort = F)
 
+
+ValidationData <- ValidationData[ValidationData$]
 
 ###################
 ######Data from SDI
@@ -150,8 +157,6 @@ title(main = 'Validation Set')
 
 ##merge the two validation data sets
 
-colnames(ValidationData@data)
-
 ValidationData@data <- subset(ValidationData@data , 
                               select = c(unitId , name , data) )
 
@@ -162,5 +167,9 @@ SDIDataShp@data <- subset(SDIDataShp@data ,
 colnames(SDIDataShp@data) <- colnames(ValidationData@data) <- c("UnitID" , "ValidationName" ,
                                                             'DHISName')
 
+SDIDataShp@data$Source <- 'SDI'
+ValidationData@data$Source <- 'eHealth'
+
 ValidationSet <- spRbind(SDIDataShp , ValidationData)
-plot(ValidationSet)
+
+writePointsShape(ValidationSet, "ValidationSet")
