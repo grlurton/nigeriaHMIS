@@ -78,7 +78,7 @@ CollapseData <- function(data , hierarchy  , level){
   out <- data.frame(indicator_id = out$indicator_id ,
                     location_id = out$location_id , 
                     value_year = out$value_year , 
-                    value = out$value_year ,
+                    value = out$value ,
                     value_type = rep('raw' , Nvalues) ,
                     value_uci = character(Nvalues),
                     value_lci = character(Nvalues) , 
