@@ -136,44 +136,61 @@ Validation <- function(TestedSet , ValidationSet){
   TestedSet <- TestedSet[TestedSet@data$match %in% ValidData$DHISName ,]
   
   TestedCoords <- data.frame(match = TestedSet$match ,
-                           latData = TestedSet@coords[,1],
-                           longData = TestedSet@coords[,2])
+                             latData = TestedSet@coords[,1],
+                             longData = TestedSet@coords[,2])
   TestedCoords <- merge(TestedCoords , ValidData , by.x = 'match' , by.y  = 'DHISName')
   
-  
   ValidCoords <- data.frame(match = ValidationSet$DHISName ,
+                            Source = ValidationSet$Source ,
                             lateHealth = ValidationSet@coords[,1],
                             longeHealth = ValidationSet@coords[,2])
-  
   Compare <- merge(ValidCoords , TestedCoords , by = 'match') 
   dist <- pointDistance(cbind(Compare$lateHealth , Compare$longeHealth), 
                         cbind(Compare$latData , Compare$longData), 
                         lonlat = TRUE, allpairs=FALSE) /1000
-  min5 <- sum(dist <5)/length(dist)
-  meanDist <- mean(dist)
-  data.frame(min5 , meanDist)
+  out <- cbind(Compare , dist)
+  out
 }
 
 CompareSet1 <- Validation(MatchStrat1 , ValidationSet)
 CompareSet2 <- Validation(MatchStrat2 , ValidationSet)
 CompareSet3 <- Validation(MatchStrat3 , ValidationSet)
 
+ValidationStatistics <- function(ValidationOutput){
+  min5 <- sum(ValidationOutput$dist <5)/length(ValidationOutput$dist)
+  meanDist <- mean(ValidationOutput$dist)
+  data.frame(min5 , meanDist) 
+}
 
-CompareSet1 <- Validation(MatchStrat1 , idbData)
+plotResults <- function(data , State){
+  dataPlot <- subset(data , substr(data$match , 1 ,2) == State)
+  coordinates(dataPlot) =~ long+lat
+  plot(dataPlot)
+  plot(DHISLGA , col = "grey" , add = TRUE)
+  plot(DHISLGA[substr(DHISLGA$UnitName , 1 ,2) == State ,] , 
+       col = "white" , add = TRUE)
+  plot(dataPlot , add = TRUE , col = 'red')
+  dataPlot <- subset(data , substr(data$match , 1 ,2) == State)
+  coordinates(dataPlot) =~ latData + longData
+  plot(dataPlot, add = TRUE)
+  segments(dataPlot$lateHealth , dataPlot$longeHealth ,
+           dataPlot$latData , dataPlot$longData , col = 'orange' , lwd = 2)
+}
+
+plotGroupped <- function(data){
+  par(mfrow = c(2,4))
+  for(State in unique(substr(data$match , 1 ,2))){
+    plotResults(data , State)
+  }
+}
+
+DiganosticElements <- function(data){
+  stat <- ddply(data , .(Source.x) , ValidationStatistics)
+  print(stat)
+  plotGroupped(data)
+}
 
 
+DiganosticElements(CompareSet2)
 
-
-### Faire validation en differenciant le validation set
 #### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
-
-
-
-#par(mfrow = c(1,1))
-#plot(CompareDHIS)
-#plot(DHISLGA , col = "grey" , add = TRUE)
-#plot(DHISLGA[substr(DHISLGA$UnitName , 1 ,2) == 'kn' ,] , col = "white" , add = TRUE)
-#plot(CompareEhealth , add = TRUE , col = 'red')
-#plot(CompareDHIS, add = TRUE)
-#segments(CompareSet$lateHealth , CompareSet$longeHealth ,
-#         CompareSet$latData , CompareSet$longData , col = 'orange' , lwd = 2)
