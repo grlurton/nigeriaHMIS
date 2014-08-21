@@ -124,101 +124,28 @@ MatchStrat3 <- MatchStrat3[MatchStrat3$match %in%
                              UniqueMatch(MatchStrat3@data , MatchStrat3@data$match),
                            ]
 
-
-############################
-###Make Validation Set######
-############################
-
-##Get dataset of facilities from ehealth
-
-ehealthdata <- osmNigeria[osmNigeria$source == 'ehealthafrica.org' &
-                            osmNigeria$amenity == 'hospital' &
-                            !is.na(osmNigeria$source) & !is.na(osmNigeria$amenity),]
-
-idbData <- read.csv("J://temp/phc/facilities.csv" , )
-nn <- nrow(idbData)
-idbData <- data.frame(name = idbData$facility_name , 
-                      lat = as.numeric(
-                        unlist(strsplit(as.character(idbData$coordinates) , ','))[2*seq(1:nn/2)-1]) ,
-                      long = as.numeric(
-                        unlist(strsplit(as.character(idbData$coordinates) , ','))[2*seq(1:nn/2)]) )
-
-idbData <- subset(idbData , !is.na(long) & !is.na(lat))
-
-coordinates(idbData) = ~long+lat
-
-
-
-plot(DHISLGA)
-plot(idbData , add = T)
-plot(ehealthdata , add = T , col = 'red')
-title(main = 'Validation Set')
-
-####
-### Match idb et DHIS pour facility / state / LGA
-### check les facilities sont dans le bon LGA
-
-
-
-
-
-
-
-##Match these datasets with datasets from DHIS => faire une fonction
-matchEhealthALL <- data.frame(ehealth = character() , data = character())
-for(i in seq(nrow(ehealthdata))){
-  out <- data.frame(ehealth = character() , data = character())
-  mm <- grep(ehealthdata$name[i] , MatchStrat1$match , 
-             ignore.case = FALSE , value = TRUE)
-  if (length(mm) > 0){
-    out <- data.frame(ehealth = ehealthdata$name[i] , data = mm)
-    matchEhealthALL <- rbind(matchEhealthALL , out)
-  }
-}
-
-rm(mm , i , out , LGA , LGAAlt , LGAData , LGADataAlt , NatFeatures)
-
-
-
-
-
-## Only keep matches with facilities in Kano region 
-## and that are matched on osm localities
-dfValidCorresp <- subset(matchEhealthALL , substr(data , 1 ,2) == 'kn')
-dfValidCorresp <- subset(dfValidCorresp ,
-                         data %in% UniqueMatch(dfValidCorresp , dfValidCorresp$data))
-dfValidCorresp <- subset(dfValidCorresp , 
-                         ehealth %in% UniqueMatch(dfValidCorresp , dfValidCorresp$ehealth))
-
-
-
-
-ValidationData <- ehealthdata[ehealthdata$name %in% dfValidCorresp$ehealth ,]
-
-
-
 ##################################################
 ########## Validate Matching #####################
 ##################################################
 
+ValidationSet <- readShapePoints('ValidationSet.shp')
+
 Validation <- function(TestedSet , ValidationSet){
   ValidData <- ValidationSet@data
-  ValidData <- merge(ValidData , dfValidCorresp , by.x = 'name' , by.y = 'ehealth' , all.y = FALSE)
-  ValidData$data <- as.character(ValidData$data)
-  TestedSet <- TestedSet[TestedSet@data$match %in% ValidData$data ,]
+  ValidData$DHISName <- as.character(ValidData$DHISName)
+  TestedSet <- TestedSet[TestedSet@data$match %in% ValidData$DHISName ,]
   
   TestedCoords <- data.frame(match = TestedSet$match ,
                            latData = TestedSet@coords[,1],
                            longData = TestedSet@coords[,2])
-  TestedCoords <- merge(TestedCoords , ValidData , by.x = 'match' , by.y  = 'data')
+  TestedCoords <- merge(TestedCoords , ValidData , by.x = 'match' , by.y  = 'DHISName')
   
   
-  ValidCoords <- data.frame(match = ValidationSet$name ,
+  ValidCoords <- data.frame(match = ValidationSet$DHISName ,
                             lateHealth = ValidationSet@coords[,1],
                             longeHealth = ValidationSet@coords[,2])
-  ValidCoords <- merge(ValidCoords , dfValidCorresp  , by.x = 'match' , by.y = 'ehealth' , all.y = FALSE)
   
-  Compare <- merge(ValidCoords , TestedCoords , by.x = 'data' , by.y = 'match') 
+  Compare <- merge(ValidCoords , TestedCoords , by = 'match') 
   dist <- pointDistance(cbind(Compare$lateHealth , Compare$longeHealth), 
                         cbind(Compare$latData , Compare$longData), 
                         lonlat = TRUE, allpairs=FALSE) /1000
@@ -227,13 +154,20 @@ Validation <- function(TestedSet , ValidationSet){
   data.frame(min5 , meanDist)
 }
 
-CompareSet1 <- Validation(MatchStrat1 , ValidationData)
-CompareSet2 <- Validation(MatchStrat2 , ValidationData)
-CompareSet3 <- Validation(MatchStrat3 , ValidationData)
+CompareSet1 <- Validation(MatchStrat1 , ValidationSet)
+CompareSet2 <- Validation(MatchStrat2 , ValidationSet)
+CompareSet3 <- Validation(MatchStrat3 , ValidationSet)
 
 
-#### Integrer les donnees de DNI or whatever , refaire la fonction validation pour la rendre plus generique,
+CompareSet1 <- Validation(MatchStrat1 , idbData)
+
+
+
+
+### Faire validation en differenciant le validation set
 #### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
+
+
 
 #par(mfrow = c(1,1))
 #plot(CompareDHIS)
