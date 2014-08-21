@@ -190,7 +190,7 @@ DiganosticElements <- function(data){
   plotGroupped(data)
 }
 
-
+DiganosticElements(CompareSet1)
 DiganosticElements(CompareSet2)
-
+DiganosticElements(CompareSet3)
 #### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
