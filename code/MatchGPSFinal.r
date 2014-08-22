@@ -133,6 +133,12 @@ osmStrategy4@data$name <- gsub(NatFeatures , '' , osmStrategy4@data$name)
 osmStrategy4@data$name <- paste(' ' , osmStrategy4@data$name , ' ' , sep = '')
 osmStrategy4@data$name <- gsub('  ' , ' ' , osmStrategy4@data$name)
 MatchStrat4 <- MatchOver(AvailableHierarchy , osmStrategy4)
+MatchStrat4Multip <- MatchStrat4[!(MatchStrat4$match %in% 
+                                 UniqueMatch(MatchStrat4@data , 
+                                             MatchStrat4@data$match)),
+                               ] 
+MatchStrat4Multip
+
 
 Centroids <- data.frame(facility = character(), 
                         place = character() ,
@@ -140,35 +146,57 @@ Centroids <- data.frame(facility = character(),
                         centroidlong = numeric() ,
                         lat = numeric() ,
                         long = numeric())
-for (place in unique(MatchStrat3$place)){
-  MatchesforPlace <- MatchStrat3[MatchStrat3$place == place , ]
+for (place in unique(MatchStrat4Multip$place)){
+  MatchesforPlace <- MatchStrat4Multip[MatchStrat4Multip$place == place , ]
   if (nrow(MatchesforPlace@data) > 1){
     for (facility in unique(MatchesforPlace$match)){
       MatchFacPlace <- MatchStrat3[MatchesforPlace$match == facility , ]
       if(nrow(MatchesforPlace@data) > 1){
-        nmatches <- nrow(MatchesforPlace@data)
-        centroid <- gCentroid(MatchesforPlace)
-        out <- data.frame(facility = rep(facility , nmatches), 
-                          place = rep(place , nmatches) ,
-                          centroidlat = rep(centroid@coords[,1] , nmatches) ,
-                          centroidlong = rep(centroid@coords[,2] , nmatches) ,
-                          lat = MatchesforPlace@coords[,1] ,
-                          long = MatchesforPlace@coords[,2]
-                          )
+        t <- pointDistance(MatchesforPlace , 
+                           lonlat = TRUE, allpairs=FALSE) /1000
+        if (max(t , na.rm = TRUE) < 10){
+          nmatches <- nrow(MatchesforPlace@data)
+          centroid <- gCentroid(MatchesforPlace)
+          out <- data.frame(facility = rep(facility , nmatches),
+                            place = rep(place , nmatches) ,
+                            centroidlat = rep(centroid@coords[,1] , nmatches) ,
+                            centroidlong = rep(centroid@coords[,2] , nmatches) ,
+                            lat = MatchesforPlace@coords[,1] ,
+                            long = MatchesforPlace@coords[,2]
+                            )
+        }
         Centroids <- rbind(Centroids , out)
-        print('1 centroid de plus')
       }
     }
   }
 }
 
-test <- subset(Centroids , place == ' Aba ')
-plot(test$lat , test$long , col = test$facility)
-points(test$centroidlat , test$centroidlong  , col = test$facility)
+CentroidsB <- Centroids
+CentroidsC <- Centroids
+
+coordinates(CentroidsB) =~ lat+long
+coordinates(CentroidsC) =~ centroidlat + centroidlong
+
+par(mfrow = c(1,2))
+plot(DHISLGA)
+plot(CentroidsB , add = TRUE , col = CentroidsB$facility)
+plot(DHISLGA)
+plot(CentroidsC , add = TRUE , col = CentroidsC$facility)
+
+Centroids <- subset(Centroids , select = c(facility , place , 
+                                        centroidlat , centroidlong))
+
+Centroids <- Centroids[!(duplicated(Centroids)) ,]
+Centroids <- Centroids[Centroids$facility %in% 
+                         UniqueMatch(Centroids , Centroids$facility) ,]
+Centroids$LGA <- ''
+coordinates(Centroids) =~ centroidlat + centroidlong
 
 
 
-##Strategy 5 - If multiple facilities have been found in a ward, attribute those in
+##Strategy 5 - Try to match with non point geometries
+
+##Strategy 6 - If multiple facilities have been found in a ward, attribute those in
 ## the same wards to variations in the convex zone
 
 ##Strategy Combine - combining first 3 strategies incrementally
