@@ -43,23 +43,31 @@ rm(osmData , osmCrop , OrgUnitsHierarchy)
 osmNigeria@data$name <- gsub('\\{|\\}' , '-' , osmNigeria@data$name)
 
 ###Matching function
-MatchSimple <- function(orgUnits , osmData){
+MatchSimple <- function(DhisData , osmData){
   out <- data.frame(index = character() , place = character() , 
                     match = character() , long = character() , lat = character())
   names <- as.character(osmData$name)
-  facilities <- as.character(orgUnits)
   nosm <- nrow(osmData@coords)
+  facilities <- as.character(DhisData$Level5)
+  facilitiesID <- as.character(DhisData$Level5ID)
+  wards <- as.character(DhisData$Level4)
+  wardsID <- as.character(DhisData$Level4ID)
   if (nosm >0){
     for(i in 1:length(names)){
-      match <- facilities[grep(x = facilities , pattern = names[i] , 
-                               ignore.case = TRUE)]
-      nmatch <- length(match)
+      match <- grep(x = facilities , pattern = names[i] , ignore.case = TRUE)
+      facility <- facilities[match]
+      facilityID <- facilitiesID[match]
+      ward <- wards[match]
+      wardID <- wardsID[match]
+      nmatch <- length(facility)
       if (nmatch > 0){
-        outWRK <- data.frame(index = rep(i , nmatch) , 
-                             place = rep(names[i] , nmatch) , 
-                             match = match ,
+        outWRK <- data.frame(place = rep(names[i] , nmatch) , 
+                             facility = facility ,
+                             facilityID = facilityID ,
                              long = osmData@coords[i] ,
-                             lat = osmData@coords[nosm + i]
+                             lat = osmData@coords[nosm + i] ,
+                             ward = ward ,
+                             wardID = wardID
         )
         out <- rbind(out , outWRK)
       }
@@ -70,25 +78,29 @@ MatchSimple <- function(orgUnits , osmData){
 
 MatchOver <- function(hierarch , osmDataCropped){
   MatchsCoords <- data.frame(index = character() , place = character() ,
-                             match = character() ,
+                             facility = character() , facilityID = character() ,
+                             ward = character() , wardID = character() ,
                              long = character() , lat = character() ,
-                             lga = character())
+                             lga = character()
+                             )
   LGAIndex <- 1
   for(LGAIndex in 1:length(unique(hierarch$Level3))){
     LGA <- unique(as.character(hierarch$Level3))[LGAIndex]
     print(paste(LGAIndex , LGA , sep = ' - '))
-    osmWRK<- osmDataCropped[osmDataCropped$DHISLGA == LGA ,]
-    hierarchWRK <- subset(hierarch , Level3 == LGA)
-    out <- MatchSimple(hierarchWRK$Level5 , osmWRK)
-    if (nrow(out) > 0){
-      out$lga <- LGA
-      MatchsCoords <- rbind(MatchsCoords , out)
+    if (sum(as.character(osmDataCropped$DHISLGA) == LGA) >= 1){
+      osmWRK<- osmDataCropped[as.character(osmDataCropped$DHISLGA) == LGA ,]
+      hierarchWRK <- subset(hierarch , Level3 == LGA)
+      out <- MatchSimple(hierarchWRK , osmWRK)
+      if (nrow(out) > 0){
+        out$lga <- LGA
+        MatchsCoords <- rbind(MatchsCoords , out)
+      }
     }
-    LGAIndex <- LGAIndex+1
+      LGAIndex <- LGAIndex+1
   }
-  coordinates(MatchsCoords) = ~long+lat
-  print(paste('Number of Matches :' , nrow(MatchsCoords) , sep = ' '))
-  MatchsCoords
+    coordinates(MatchsCoords) = ~long+lat
+    print(paste('Number of Matches :' , nrow(MatchsCoords) , sep = ' '))
+    MatchsCoords
 }
 
 UniqueMatch <- function(data , indexVar){
@@ -101,8 +113,8 @@ osmStrategy1 <- osmNigeria[!is.na(osmNigeria$place) ,]
 osmStrategy1@data$name <- paste(' ' , osmStrategy1@data$name , ' ' , sep = '')
 osmStrategy1@data$name <- gsub('  ' , ' ' , osmStrategy1@data$name)
 MatchStrat1 <- MatchOver(AvailableHierarchy , osmStrategy1)
-MatchStrat1 <- MatchStrat1[MatchStrat1$match %in% 
-                             UniqueMatch(MatchStrat1@data , MatchStrat1@data$match),
+MatchStrat1 <- MatchStrat1[MatchStrat1$facilityID %in% 
+                             UniqueMatch(MatchStrat1@data , MatchStrat1@data$facilityID),
                            ]
 
 ##Strategy 2 - match simply on all units in OSM 
@@ -110,8 +122,8 @@ osmStrategy2 <- osmNigeria
 osmStrategy2@data$name <- paste(' ' , osmStrategy2@data$name , ' ' , sep = '')
 osmStrategy2@data$name <- gsub('  ' , ' ' , osmStrategy2@data$name)
 MatchStrat2 <- MatchOver(AvailableHierarchy , osmStrategy2)
-MatchStrat2 <- MatchStrat2[MatchStrat2$match %in% 
-                             UniqueMatch(MatchStrat2@data , MatchStrat2@data$match),
+MatchStrat2 <- MatchStrat2[MatchStrat2$facilityID %in% 
+                             UniqueMatch(MatchStrat2@data , MatchStrat2@data$facilityID),
                            ]
 
 ##Strategy 3 - simplify osm names by taking out natural feature indication
@@ -121,8 +133,8 @@ osmStrategy3@data$name <- gsub(NatFeatures , '' , osmStrategy3@data$name)
 osmStrategy3@data$name <- paste(' ' , osmStrategy3@data$name , ' ' , sep = '')
 osmStrategy3@data$name <- gsub('  ' , ' ' , osmStrategy3@data$name)
 MatchStrat3 <- MatchOver(AvailableHierarchy , osmStrategy3)
-MatchStrat3 <- MatchStrat3[MatchStrat3$match %in% 
-                             UniqueMatch(MatchStrat3@data , MatchStrat3@data$match),
+MatchStrat3 <- MatchStrat3[MatchStrat3$facilityID %in% 
+                             UniqueMatch(MatchStrat3@data , MatchStrat3@data$facilityID),
                            ]
 
 ##Strategy 4 - From Strategy 4 - if name has multiple match, in a < 10 km2 zone, put
@@ -133,43 +145,45 @@ osmStrategy4@data$name <- gsub(NatFeatures , '' , osmStrategy4@data$name)
 osmStrategy4@data$name <- paste(' ' , osmStrategy4@data$name , ' ' , sep = '')
 osmStrategy4@data$name <- gsub('  ' , ' ' , osmStrategy4@data$name)
 MatchStrat4 <- MatchOver(AvailableHierarchy , osmStrategy4)
-MatchStrat4Multip <- MatchStrat4[!(MatchStrat4$match %in% 
+MatchStrat4Multip <- MatchStrat4[!(MatchStrat4$facilityID %in% 
                                  UniqueMatch(MatchStrat4@data , 
-                                             MatchStrat4@data$match)),
+                                             MatchStrat4@data$facilityID)),
                                ] 
-MatchStrat4Multip
 
-
-Centroids <- data.frame(facility = character(), 
-                        place = character() ,
-                        centroidlat = numeric(),
-                        centroidlong = numeric() ,
-                        lat = numeric() ,
-                        long = numeric())
-for (place in unique(MatchStrat4Multip$place)){
-  MatchesforPlace <- MatchStrat4Multip[MatchStrat4Multip$place == place , ]
-  if (nrow(MatchesforPlace@data) > 1){
-    for (facility in unique(MatchesforPlace$match)){
-      MatchFacPlace <- MatchStrat3[MatchesforPlace$match == facility , ]
-      if(nrow(MatchesforPlace@data) > 1){
-        t <- pointDistance(MatchesforPlace , 
-                           lonlat = TRUE, allpairs=FALSE) /1000
-        if (max(t , na.rm = TRUE) < 10){
-          nmatches <- nrow(MatchesforPlace@data)
-          centroid <- gCentroid(MatchesforPlace)
-          out <- data.frame(facility = rep(facility , nmatches),
-                            place = rep(place , nmatches) ,
-                            centroidlat = rep(centroid@coords[,1] , nmatches) ,
-                            centroidlong = rep(centroid@coords[,2] , nmatches) ,
-                            lat = MatchesforPlace@coords[,1] ,
-                            long = MatchesforPlace@coords[,2]
-                            )
+GetCentroids <- function(data){
+  Centroids <- data.frame(facility = character(), facilityID = character() ,
+                          place = character() ,
+                          centroidlat = numeric(), centroidlong = numeric() ,
+                          lat = numeric() , long = numeric() ,
+                          ward = character() , wardID = character())
+  for (place in unique(data$place)){
+    MatchesforPlace <- data[data$place == place , ]
+    if (nrow(MatchesforPlace@data) > 1){
+      for (facilityID in unique(MatchesforPlace$facilityID)){
+        MatchFacPlace <- MatchesforPlace[MatchesforPlace$facilityID == facilityID , ]
+        if(nrow(MatchesforPlace@data) > 1){
+          t <- pointDistance(MatchesforPlace ,
+                             lonlat = TRUE, allpairs=FALSE) /1000
+          if (max(t , na.rm = TRUE) < 10){
+            nmatches <- nrow(MatchesforPlace@data)
+            centroid <- gCentroid(MatchesforPlace)
+            out <- data.frame(facilityID = rep(facilityID , nmatches),
+                              place = rep(place , nmatches) ,
+                              centroidlat = rep(centroid@coords[,1] , nmatches) ,
+                              centroidlong = rep(centroid@coords[,2] , nmatches) ,
+                              lat = MatchesforPlace@coords[,1] ,
+                              long = MatchesforPlace@coords[,2]
+                              )
+          }
+          Centroids <- rbind(Centroids , out)
         }
-        Centroids <- rbind(Centroids , out)
       }
     }
   }
+  Centroids
 }
+
+Centroids <- GetCentroids(MatchStrat4Multip)
 
 CentroidsB <- Centroids
 CentroidsC <- Centroids
@@ -204,42 +218,68 @@ osmStrategyC1 <- osmNigeria[!is.na(osmNigeria$place) ,]
 osmStrategyC1@data$name <- paste(' ' , osmStrategyC1@data$name , ' ' , sep = '')
 osmStrategyC1@data$name <- gsub('  ' , ' ' , osmStrategyC1@data$name)
 MatchStratC1 <- MatchOver(AvailableHierarchy , osmStrategyC1)
-MatchStratC1 <- MatchStratC1[MatchStratC1$match %in% 
-                             UniqueMatch(MatchStratC1@data , MatchStratC1@data$match),
+MatchStratC1 <- MatchStratC1[MatchStratC1$facilityID %in% 
+                             UniqueMatch(MatchStratC1@data , MatchStratC1@data$facilityID),
                              ]
 MatchStratC1@data$MatchingStage <- 'Stage 1'
 
 
 ##Step 2
 
-HierarchyStep2 <- subset(AvailableHierarchy , !(Level5 %in% MatchStratC1$match))
+HierarchyStep2 <- subset(AvailableHierarchy , !(Level5ID %in% MatchStratC1$facilityID))
 osmStrategyC2 <- osmNigeria
 osmStrategyC2@data$name <- paste(' ' , osmStrategyC2@data$name , ' ' , sep = '')
-#osmStrategyC2 <- osmStrategyC2[!(osmStrategyC2@data$name %in% 
-#                                as.character(MatchStratC1$place)), ]
 osmStrategyC2@data$name <- gsub('  ' , ' ' , osmStrategyC2@data$name)
 MatchStratC2 <- MatchOver(HierarchyStep2 , osmStrategyC2)
-MatchStratC2 <- MatchStratC2[MatchStratC2$match %in% 
-                             UniqueMatch(MatchStratC2@data , MatchStratC2@data$match), 
+MatchStratC2 <- MatchStratC2[MatchStratC2$facilityID %in% 
+                             UniqueMatch(MatchStratC2@data , MatchStratC2@data$facilityID), 
                              ]
 MatchStratC2@data$MatchingStage <- 'Stage 2'                           
 MatchStratC2 <- spRbind(MatchStratC2 , MatchStratC1)
 
 ##Step 3
 
-HierarchyStep3 <- subset(AvailableHierarchy , !(Level5 %in% MatchStratC2$match))
+HierarchyStep3 <- subset(AvailableHierarchy , !(Level5ID %in% MatchStratC2$facilityID))
 osmStrategyC3 <- osmNigeria
 osmStrategyC3@data$name <- gsub(NatFeatures , '' , osmStrategyC3@data$name)
 osmStrategyC3@data$name <- paste(' ' , osmStrategyC3@data$name , ' ' , sep = '')
-#osmStrategyC3 <- osmStrategyC3[!(osmStrategyC3@data$name %in% 
-#                                   as.character(MatchStratC2$place)), ]
 osmStrategyC3@data$name <- gsub('  ' , ' ' , osmStrategyC3@data$name)
 MatchStratC3 <- MatchOver(HierarchyStep3 , osmStrategyC3)
-MatchStratC3 <- MatchStratC3[MatchStratC3$match %in% 
-                               UniqueMatch(MatchStratC3@data , MatchStratC3@data$match), 
+MatchStratC3 <- MatchStratC3[MatchStratC3$facilityID %in% 
+                               UniqueMatch(MatchStratC3@data , MatchStratC3@data$facilityID), 
                              ]
 MatchStratC3@data$MatchingStage <- 'Stage 3'                           
 MatchStratC3 <- spRbind(MatchStratC3 , MatchStratC2)
+
+##Step 4
+
+HierarchyStep4 <- subset(AvailableHierarchy , !(Level5 %in% MatchStratC3$facilityID))
+osmStrategyC4 <- osmNigeria
+osmStrategyC4@data$name <- gsub(NatFeatures , '' , osmStrategyC4@data$name)
+osmStrategyC4@data$name <- paste(' ' , osmStrategyC4@data$name , ' ' , sep = '')
+osmStrategyC4@data$name <- gsub('  ' , ' ' , osmStrategyC4@data$name)
+MatchStratC4Multip <- MatchOver(HierarchyStep4 , osmStrategyC4)
+MatchStratC4Multip <- MatchStratC4Multip[!(MatchStratC4Multip$facilityID %in% 
+                                     UniqueMatch(MatchStratC4Multip@data , 
+                                                 MatchStratC4Multip@data$facilityID)),
+                                 ]
+
+Centroids <- GetCentroids(MatchStratC4Multip)
+
+Centroids <- subset(Centroids , select = c(facilityID , place , 
+                                           centroidlat , centroidlong))
+
+Centroids <- Centroids[!(duplicated(Centroids)) ,]
+Centroids <- Centroids[Centroids$facilityID %in% 
+                         UniqueMatch(Centroids , Centroids$facilityID) ,]
+Centroids$LGA <- ''
+coordinates(Centroids) =~ centroidlat + centroidlong
+Centroids@data$MatchingStage <- 'Stage 4'
+Centroids@data$index <- seq(1:nrow(Centroids@data))
+colnames(Centroids@data) <- c('facilityID' , 'place' , 'lga' , 'MatchingStage' , 'index')
+                      
+MatchStratC4 <- spRbind(Centroids , MatchStratC3)
+
                              
                              
                              
@@ -255,19 +295,20 @@ ValidationSet <- readShapePoints('ValidationSet.shp')
 
 Validation <- function(TestedSet , ValidationSet){
   ValidData <- ValidationSet@data
-  ValidData$DHISName <- as.character(ValidData$DHISName)
-  TestedSet <- TestedSet[TestedSet@data$match %in% ValidData$DHISName ,]
+  ValidData$UnitID <- as.character(ValidData$UnitID)
+  TestedSet <- TestedSet[TestedSet@data$facilityID %in% ValidData$UnitID ,]
   
-  TestedCoords <- data.frame(match = TestedSet$match ,
+  TestedCoords <- data.frame(facilityID = TestedSet$facilityID ,
                              latData = TestedSet@coords[,1],
                              longData = TestedSet@coords[,2])
-  TestedCoords <- merge(TestedCoords , ValidData , by.x = 'match' , by.y  = 'DHISName')
+  TestedCoords <- merge(TestedCoords , ValidData , by.x = 'facilityID' , by.y  = 'UnitID')
   
-  ValidCoords <- data.frame(match = ValidationSet$DHISName ,
+  print('OK')
+  ValidCoords <- data.frame(facilityID = ValidationSet$UnitID ,
                             Source = ValidationSet$Source ,
                             lateHealth = ValidationSet@coords[,1],
                             longeHealth = ValidationSet@coords[,2])
-  Compare <- merge(ValidCoords , TestedCoords , by = 'match') 
+  Compare <- merge(ValidCoords , TestedCoords , by = 'facilityID') 
   dist <- pointDistance(cbind(Compare$lateHealth , Compare$longeHealth), 
                         cbind(Compare$latData , Compare$longData), 
                         lonlat = TRUE, allpairs=FALSE) /1000
@@ -278,6 +319,7 @@ Validation <- function(TestedSet , ValidationSet){
 CompareSet1 <- Validation(MatchStratC1 , ValidationSet)
 CompareSet2 <- Validation(MatchStratC2 , ValidationSet)
 CompareSet3 <- Validation(MatchStratC3 , ValidationSet)
+CompareSet4 <- Validation(MatchStratC4 , ValidationSet)
 
 ValidationStatistics <- function(ValidationOutput){
   min5 <- sum(ValidationOutput$dist <5)/length(ValidationOutput$dist)
@@ -316,4 +358,5 @@ DiganosticElements <- function(data){
 DiganosticElements(CompareSet1)
 DiganosticElements(CompareSet2)
 DiganosticElements(CompareSet3)
+DiganosticElements(CompareSet4)
 #### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
