@@ -166,13 +166,22 @@ GetCentroids <- function(data){
                              lonlat = TRUE, allpairs=FALSE) /1000
           if (max(t , na.rm = TRUE) < 10){
             nmatches <- nrow(MatchesforPlace@data)
+            facility <- unique(MatchesforPlace$facility[MatchesforPlace$facilityID == 
+                                                               facilityID])
+            ward     <- unique(MatchesforPlace$ward[MatchesforPlace$facilityID == 
+                                                          facilityID])
+            wardID     <- unique(MatchesforPlace$wardID[MatchesforPlace$facilityID == 
+                                                      facilityID])
             centroid <- gCentroid(MatchesforPlace)
             out <- data.frame(facilityID = rep(facilityID , nmatches),
+                              facility = rep(facility , nmatches) ,
                               place = rep(place , nmatches) ,
                               centroidlat = rep(centroid@coords[,1] , nmatches) ,
                               centroidlong = rep(centroid@coords[,2] , nmatches) ,
                               lat = MatchesforPlace@coords[,1] ,
-                              long = MatchesforPlace@coords[,2]
+                              long = MatchesforPlace@coords[,2] ,
+                              ward = rep(ward , nmatches) ,
+                              wardID = rep(wardID , nmatches)                              
                               )
           }
           Centroids <- rbind(Centroids , out)
@@ -212,6 +221,10 @@ coordinates(Centroids) =~ centroidlat + centroidlong
 
 ##Strategy 6 - If multiple facilities have been found in a ward, attribute those in
 ## the same wards to variations in the convex zone
+osmStrategyC1 <- osmNigeria[!is.na(osmNigeria$place) ,]
+
+
+
 
 ##Strategy Combine - combining first 3 strategies incrementally
 osmStrategyC1 <- osmNigeria[!is.na(osmNigeria$place) ,]
@@ -266,7 +279,7 @@ MatchStratC4Multip <- MatchStratC4Multip[!(MatchStratC4Multip$facilityID %in%
 
 Centroids <- GetCentroids(MatchStratC4Multip)
 
-Centroids <- subset(Centroids , select = c(facilityID , place , 
+Centroids <- subset(Centroids , select = c(facilityID , place , facility , ward , wardID ,
                                            centroidlat , centroidlong))
 
 Centroids <- Centroids[!(duplicated(Centroids)) ,]
@@ -275,14 +288,101 @@ Centroids <- Centroids[Centroids$facilityID %in%
 Centroids$LGA <- ''
 coordinates(Centroids) =~ centroidlat + centroidlong
 Centroids@data$MatchingStage <- 'Stage 4'
-Centroids@data$index <- seq(1:nrow(Centroids@data))
-colnames(Centroids@data) <- c('facilityID' , 'place' , 'lga' , 'MatchingStage' , 'index')
+colnames(Centroids@data) <- c('facilityID' , 'place' , 'facility' ,
+                              'ward' , 'wardID' , 'lga' , 'MatchingStage')
                       
 MatchStratC4 <- spRbind(Centroids , MatchStratC3)
 
-                             
-                             
-                             
+
+##Strategy 5 - Try to match with non point geometries
+
+##Strategy 6 - If multiple facilities have been found in a ward, attribute those in
+## the same wards to variations in the convex zone
+
+##Function to get the convex hull of a ward
+
+GetWardsConvexHull <- function(Data , WardID){
+  data <- Data[Data@data$wardID == WardID ,]
+  if (nrow(data@data) > 1){
+    out <- gConvexHull(data)
+    out
+  }
+}
+
+##Function that should get all convex hull for all wards
+##pb = some are just lines and pb in mering
+
+WardsCH <- function(data){
+  wardsIds <- unique(data$wardID)
+  out <- GetWardsConvexHull(data , wardsIds[1])
+#  out@data$wardID <- wardsIds[1]
+  for (ID in wardsIds[-1]){
+    print(ID)
+    wards <- GetWardsConvexHull(data , ID)
+#    wards@data$wardID <- ID
+  }
+  if (!is.null(wards)){
+    out <- spRbind(out , wards)
+  }
+  out
+}
+
+test <- WardsCH(MatchStratC4)
+
+plot(test)
+
+GetWardsCentroid <- function(Data){
+  out <- data.frame(centroidlat = numeric(), centroidlong = numeric() , 
+                    wardID = character())
+  wardsIds <- unique(Data$wardID)
+  for (ward in wardsIds){
+    print(ward)
+    xx <- data.frame(wardID = ward)
+    wardsCentroid <- gCentroid(Data[Data@data$wardID == ward,])
+    xx$centroidlat <- wardsCentroid@coords[,1]
+    xx$centroidlong <- wardsCentroid@coords[,2]
+    out <- rbind(out , xx)
+  }
+  out
+}
+
+WardsCentroids <- GetWardsCentroid(MatchStratC4)
+
+HierarchyStep5 <- subset(AvailableHierarchy , !(Level5 %in% MatchStratC4$facilityID))
+NonMatchedFacilities <- HierarchyStep4[!(HierarchyStep4$Level5ID%in% MatchStratC4$facilityID) ,]
+
+FacilitiesToWardCentroid <- function(facilities , wardsCentroids){
+  out <- data.frame(facility = character(), facilityID = character() ,
+                    centroidlat = numeric(), centroidlong = numeric() , 
+                    wardID = character())
+  for (facilityID in facilities$Level5ID){
+    print(facilityID)
+    facility <- facilities$Level5[facilities$Level5ID == facilityID]
+    wardID <- facilities$Level4ID[facilities$Level5ID == facilityID]
+    wardsCentroids$wardID <- as.character(wardsCentroids$wardID )
+    centroidlat <- wardsCentroids$centroidlat[wardsCentroids$wardID == wardID]
+    centroidlong <- wardsCentroids$centroidlong[wardsCentroids$wardID == wardID]
+    if (length(centroidlat) > 0){
+      xx <- data.frame(facility , facilityID , wardID , centroidlat , centroidlong)
+      out <- rbind(out , xx)
+    }
+  }
+  out
+}
+
+Match5 <- FacilitiesToWardCentroid(NonMatchedFacilities , WardsCentroids)
+coordinates(Match5) <- ~centroidlat+ centroidlong
+
+colnames(Match5@data)
+colnames(MatchStratC4@data)
+
+Match5$place <- Match5$ward <- Match5$lga <- ''
+
+Match5$MatchingStage <- 'Stage 5'
+
+
+MatchStratC5 <- spRbind(MatchStratC4 , Match5)
+
 rm(osmStrategy1 , osmStrategy2 , osmStrategy3 , osmStrategy4 , osmStrategyC1 ,
    osmStrategy42 , osmStrategyC3)
 
@@ -302,8 +402,7 @@ Validation <- function(TestedSet , ValidationSet){
                              latData = TestedSet@coords[,1],
                              longData = TestedSet@coords[,2])
   TestedCoords <- merge(TestedCoords , ValidData , by.x = 'facilityID' , by.y  = 'UnitID')
-  
-  print('OK')
+
   ValidCoords <- data.frame(facilityID = ValidationSet$UnitID ,
                             Source = ValidationSet$Source ,
                             lateHealth = ValidationSet@coords[,1],
@@ -320,6 +419,8 @@ CompareSet1 <- Validation(MatchStratC1 , ValidationSet)
 CompareSet2 <- Validation(MatchStratC2 , ValidationSet)
 CompareSet3 <- Validation(MatchStratC3 , ValidationSet)
 CompareSet4 <- Validation(MatchStratC4 , ValidationSet)
+CompareSet5 <- Validation(MatchStratC5 , ValidationSet)
+
 
 ValidationStatistics <- function(ValidationOutput){
   min5 <- sum(ValidationOutput$dist <5)/length(ValidationOutput$dist)
@@ -359,4 +460,5 @@ DiganosticElements(CompareSet1)
 DiganosticElements(CompareSet2)
 DiganosticElements(CompareSet3)
 DiganosticElements(CompareSet4)
+DiganosticElements(CompareSet5)
 #### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
