@@ -402,7 +402,8 @@ Validation <- function(TestedSet , ValidationSet){
                              latData = TestedSet@coords[,1],
                              longData = TestedSet@coords[,2])
   TestedCoords <- merge(TestedCoords , ValidData , by.x = 'facilityID' , by.y  = 'UnitID')
-
+  
+  
   ValidCoords <- data.frame(facilityID = ValidationSet$UnitID ,
                             Source = ValidationSet$Source ,
                             lateHealth = ValidationSet@coords[,1],
@@ -428,6 +429,8 @@ ValidationStatistics <- function(ValidationOutput){
   data.frame(min5 , meanDist) 
 }
 
+
+##Should review plotting
 plotResults <- function(data , State){
   dataPlot <- subset(data , substr(data$match , 1 ,2) == State)
   coordinates(dataPlot) =~ long+lat
