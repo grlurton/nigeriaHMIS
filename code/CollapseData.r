@@ -24,14 +24,9 @@ DataUse <- subset(DataUse , select = c(orgUnit , dataElement , value , DataYear)
 DataLogical <- subset(DataUse , value %in% c('false' , 'true'))
 DataNumeric <- subset(DataUse , !is.na(as.numeric(as.character(value))))
 
-AverageData <- ddply(DataNumeric , .(dataElement , orgUnit , DataYear) , function(x) mean(as.numeric(x$value) , 
-                                                                                          na.rm = TRUE) ,
-                     .progress  = 'text')
-
-
-
-
-CollapseData <- function(data , hierarchy  , level){
+#AverageData <- ddply(DataNumeric , .(dataElement , orgUnit , DataYear) , function(x) mean(as.numeric(x$value) , 
+#                                                                                          na.rm = TRUE) ,
+#         unction(data , hierarchy  , level){
   library(plyr)
   dataFacil1 <- merge(hierarchy  , data , by.y = 'orgUnit' , by.x = 'Level6ID')
   subset(dataFacil1 , select = c(dataElement , value , DataYear , 

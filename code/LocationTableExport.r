@@ -8,28 +8,34 @@ HierarchyData <- read.csv('HierarchyData.csv' , stringsAsFactors = FALSE)
 SDIFacilities <- read.csv('J://temp/phc/facilities.csv' , stringsAsFactors = FALSE)
 MetaData <- read.csv(file = 'MetadataUnitsRaw.csv' , stringsAsFactors = FALSE)
 
+##This Data set gets OrgUnits with at least one associated data set or data recorded
 
-DataUnits <- as.character(read.csv('UnitsWithData.csv')$x)
+DataUnits <- read.csv('UnitsWithData.csv', stringsAsFactors = FALSE)$x
 ReportUnits <- unique(as.character(read.csv('OrgUnitxDataSets.csv')$as.character.orgUnits))
 
 UnitsToMatch <- unique(c(DataUnits , ReportUnits))
 
-FacilitiesToUse <- subset(MetaData , UnitId %in% UnitsToMatch & UnitLevel > 4 , select = c(UnitName , UnitLevel , UnitId))
+##Cleaning facilities from DHIS to only keep active facilities and get duplicates out
+FacilitiesToUse <- subset(MetaData , UnitId %in% UnitsToMatch & UnitLevel > 4 , 
+                          select = c(UnitName , UnitLevel , UnitId))
 FacilitiesToUse <- FacilitiesToUse[!duplicated(FacilitiesToUse) , ]
 
 
-###Getting SDI Data in matched facilities
-FacilitiesWithData <- merge(FacilitiesMatched , SDIFacilities , by.x = 'SDIFacility' , by.y = 'facility_name')
-FacilitiesWithData <- subset(FacilitiesWithData , select = c(SDIFacility , DHISFacility , UnitId , 
-                                                             basic_em_obstetric_service , comp_em_obstetric_service , 
-                                                             vaccine_service , coordinates , fac_type , urbanicity , 
-                                                             ownership , datayear , datasource, nid))
+###Getting SDI Data about matched facilities 
+FacilitiesWithData <- merge(FacilitiesMatched , 
+                            SDIFacilities , by.x = 'SDIFacility' , by.y = 'facility_name')
+FacilitiesWithData <- subset(FacilitiesWithData , 
+                             select = c(SDIFacility , DHISFacility , UnitId ,
+                                        basic_em_obstetric_service , comp_em_obstetric_service , 
+                                        vaccine_service , coordinates , fac_type , urbanicity ,
+                                        ownership , datayear , datasource, nid))
 
 ###Compiling the two
 FacilitiesComplete <- merge(FacilitiesToUse , FacilitiesWithData , by = 'UnitId' , all.x = TRUE)
 
 ##making hierarchy of facilities
-FacilitiesFull <- merge(FacilitiesComplete , HierarchyData , by.x = 'UnitId' , by.y = 'Level5ID' , all.x = TRUE)
+FacilitiesFull <- merge(FacilitiesComplete , HierarchyData , 
+                        by.x = 'UnitId' , by.y = 'Level5ID' , all.x = TRUE)
 
 ##It appears some facilities have two parents. We remove them for simplicity
 dupl <- table(as.character(FacilitiesFull$UnitId)) > 1
@@ -37,12 +43,15 @@ drop <- unique(as.character(FacilitiesFull$UnitId))[dupl]
 
 FacilitiesFull <- subset(FacilitiesFull , !(UnitId %in% drop))
 
+###We know have the list of facilities we want to keep
 
+##We only keep the indicators we need
 FacilitiesFull <- subset(FacilitiesFull , select = c(SDIFacility , UnitName , UnitId , UnitLevel , 
                                                              basic_em_obstetric_service , comp_em_obstetric_service , 
                                                              vaccine_service , coordinates , fac_type , urbanicity , 
                                                              ownership , datayear , datasource, nid , Level4ID , Level4 ))
 
+##Adding facilities of level 6
 FacilitiesFull <- merge(FacilitiesFull , HierarchyData , by.x = 'UnitId' , by.y = 'Level6ID' , all.x = TRUE)
 FacilitiesFull <- subset(FacilitiesFull , select = c(UnitName , SDIFacility , UnitId , UnitLevel , 
                                                      basic_em_obstetric_service , comp_em_obstetric_service , 
@@ -51,7 +60,7 @@ FacilitiesFull <- subset(FacilitiesFull , select = c(UnitName , SDIFacility , Un
                                                      Level5))
 
 
-
+##We want the Ward to be the parents
 FacilitiesFull$parentID <- as.character(FacilitiesFull$Level4ID)
 FacilitiesFull$parentID[!is.na(FacilitiesFull$Level5ID)] <- as.character(FacilitiesFull$Level5ID[!is.na(FacilitiesFull$Level5ID)])
 
