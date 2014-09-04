@@ -383,6 +383,8 @@ Match5$MatchingStage <- 'Stage 5'
 
 MatchStratC5 <- spRbind(MatchStratC4 , Match5)
 
+nrow(MatchStratC5@data)
+
 rm(osmStrategy1 , osmStrategy2 , osmStrategy3 , osmStrategy4 , osmStrategyC1 ,
    osmStrategy42 , osmStrategyC3)
 
