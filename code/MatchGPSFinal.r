@@ -469,3 +469,11 @@ DiganosticElements(CompareSet3)
 DiganosticElements(CompareSet4)
 DiganosticElements(CompareSet5)
 #### essayer de mapper plus de facilities de Kano (avec la fonction faite pour mapper)
+
+par(mfrow = c(1,1))
+plot(MatchStratC5 , col = as.factor(MatchStratC5$MatchingStage))
+legend('left' , legend = sort(unique(as.factor(MatchStratC5$MatchingStage))) , 
+       col = 1:5 , pch = 3 ,
+       cex = 0.7 , text.width = 1)
+
+
