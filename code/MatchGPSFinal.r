@@ -21,11 +21,7 @@ AvailableHierarchy <- subset(OrgUnitsHierarchy , #Level3 %in% DHISLGA$UnitName &
                                Level5ID %in% Facilities)
 
 ##Voir comment obtenir osm data directement
-osmData <- readShapePoints("C://Users/grlurton/Documents/NGAMap/NigeriaPointsEdit2.shp")
-
-#####################################
-#####Retrieve Usable OSM layer#######
-#####################################
+osmData <- readShapePoints("OSMDataNigeria.shp")
 
 ##Crop data to fit the zones we have in DHIS
 osmCrop <- over(osmData , DHISLGA)
@@ -38,9 +34,18 @@ osmNigeria <- osmData[!is.na(osmData$DHISLGA) ,]
 
 rm(osmData , osmCrop , OrgUnitsHierarchy)
 
+#####################################
+#####Retrieve Usable OSM layer#######
+#####################################
+
+
+
+
 ##Prepare osm names to be used in the matching
 
 osmNigeria@data$name <- gsub('\\{|\\}' , '-' , osmNigeria@data$name)
+
+
 
 ###Matching function
 MatchSimple <- function(DhisData , osmData){
@@ -221,9 +226,6 @@ coordinates(Centroids) =~ centroidlat + centroidlong
 
 ##Strategy 6 - If multiple facilities have been found in a ward, attribute those in
 ## the same wards to variations in the convex zone
-osmStrategyC1 <- osmNigeria[!is.na(osmNigeria$place) ,]
-
-
 
 
 ##Strategy Combine - combining first 3 strategies incrementally
@@ -327,9 +329,9 @@ WardsCH <- function(data){
   out
 }
 
-test <- WardsCH(MatchStratC4)
+#test <- WardsCH(MatchStratC4)
 
-plot(test)
+#plot(test)
 
 GetWardsCentroid <- function(Data){
   out <- data.frame(centroidlat = numeric(), centroidlong = numeric() , 
