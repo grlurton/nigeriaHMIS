@@ -476,4 +476,4 @@ legend('left' , legend = sort(unique(as.factor(MatchStratC5$MatchingStage))) ,
        col = 1:5 , pch = 3 ,
        cex = 0.7 , text.width = 1)
 
-
+writePointsShape(MatchStratC5, "FacilitiesGPS")
