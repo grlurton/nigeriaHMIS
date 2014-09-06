@@ -1,9 +1,10 @@
 library(ggplot2)
+library(zoo)
 
 Data <- read.csv('Data.csv')
 
 #Data$lastupdated <- as.Date(Data$lastupdated)
-Data$DEName <- as.character(Data$DEName)
+Data$dataElement <- as.character(Data$dataElement)
 
 Data$period <- as.Date(as.yearmon(Data$period, "%Y%m"))
 
