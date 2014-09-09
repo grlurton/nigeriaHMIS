@@ -22,4 +22,4 @@ for (i in 2:max(MetaData$UnitLevel)){
   i <- i+1
 }
 
-write.csv(HierarchData , 'HierarchyData.csv')
+write.csv(HierarchData , 'HierarchyData.csv' ,row.names = FALSE)
