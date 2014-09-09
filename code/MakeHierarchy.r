@@ -11,7 +11,7 @@ for (i in 2:max(MetaData$UnitLevel)){
   print(i)
   HierarchData <- merge(HierarchData , 
                         subset(OrgUnits , select = c(UnitName  , ParentName, UnitId)) , 
-                        by.x = 'toMatch' , by.y = 'ParentName')
+                        by.x = 'toMatch' , by.y = 'ParentId')
   print(colnames(HierarchData))
   colnames(HierarchData)[2*(i-1)] <- 'toMatch'
   colnames(HierarchData)[2*(i-1)+1] <- paste('Level' , i  , 'ID', sep = '')
