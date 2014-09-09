@@ -9,6 +9,7 @@ Nigeria <-'https://dhis2nigeria.org.ng/api/organisationUnits/s5DPBsdoE8b.xml'
 ##Function to extract children from a given page + adress of children
 getChildren <- function(url){
   ParentName <- xmlGetAttr(root , "name")
+  ParentId <- xmlGetAttr(root , "id")
   if(length(root[['children']]) > 0){
     UnitName <- xmlSApply(root[['children']] , xmlGetAttr , "name")
     UnitId <- xmlSApply(root[['children']] , xmlGetAttr , "id")
@@ -17,7 +18,7 @@ getChildren <- function(url){
   else{
     UnitAdress <- UnitName <- UnitAdress <- UnitId<- NA
   } 
-  out <- data.frame(UnitName , UnitId ,  UnitAdress , ParentName )
+  out <- data.frame(UnitName , UnitId ,  UnitAdress , ParentName , ParentId)
   out
 }
 
@@ -42,7 +43,7 @@ getMetadata<- function(root){
 pagesToRead <- c(Nigeria)
 pagesRead <- c()
 orgUnits <- data.frame(unitName =  character() , UnitId =  character() ,
-                       UnitAdress = character() , ParentName = character())
+                       UnitAdress = character() , ParentName = character() , ParentId = character())
 MetaData <- data.frame(UnitName = character() , UnitLevel = character() , 
                       UnitId = character() , GroupName = character())
 countp <- 0
@@ -51,7 +52,8 @@ total <- 0
 StartTime <- Sys.time()
 while (length(pagesToRead) > 0){
   extractOrg <- data.frame(unitName =  character() , UnitId =  character() ,
-                           UnitAdress = character() , ParentName = character() , ParentLevel = character())
+                           UnitAdress = character() , ParentName = character() , ParentLevel = character() ,
+                           ParentId = character())
   extractMeta <- data.frame(UnitName = character() , GroupName = character())
   pagesJustRead <- c()  
   for(url in pagesToRead){
