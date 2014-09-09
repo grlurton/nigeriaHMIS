@@ -87,5 +87,5 @@ while (length(pagesToRead) > 0){
 }
 StopTime <- Sys.time()
 
-write.csv(MetaData ,  'MetadataUnitsRaw.csv')
-write.csv(orgUnits , 'ExtractOrgUnitsRaw.csv')
+write.csv(MetaData ,  'MetadataUnitsRaw.csv' , row.names = FALSE)
+write.csv(orgUnits , 'ExtractOrgUnitsRaw.csv', row.names = FALSE)
