@@ -186,4 +186,14 @@ LocationTable$location_level[LocationTable$location_level == '5'] <- 'Facility'
 LocationTable$location_level[LocationTable$location_level == '6'] <- 'Facility2'
 table(LocationTable$location_level)
 
+###Put Capital letters for initial letters of multiple word 
+simpleCap <- function(x) {
+  s <- strsplit(x$location_name, " ")[[1]]
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+        sep="", collapse=" ")
+}
+
+out <- ddply(LocationTable , .(location_id), simpleCap )
+LocationTable$location_name <- out$V1
+
 write.csv(LocationTable , 'table_location.csv' , row.names = FALSE)
