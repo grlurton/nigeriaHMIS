@@ -476,4 +476,10 @@ legend('left' , legend = sort(unique(as.factor(MatchStratC5$MatchingStage))) ,
        col = 1:5 , pch = 3 ,
        cex = 0.7 , text.width = 1)
 
+WardKano <- AvailableHierarchy$Level3ID[AvailableHierarchy$Level2 == 'kn Kano State']
+
+DataToPlot <- MatchStratC5[MatchStratC5$wardID %in% WardKano & !is.na(MatchStratC5$wardID ),]
+
+plot(DataToPlot , col = as.factor(DataToPlot$MatchingStage))
+
 writePointsShape(MatchStratC5, "FacilitiesGPS")

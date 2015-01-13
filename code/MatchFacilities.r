@@ -92,6 +92,10 @@ SDIToMatch$SDIFacility <- gsub('  ' , ' ' , SDIToMatch$SDIFacility)
 SDIToMatch$SDIFacility <- str_trim(SDIToMatch$SDIFacility)
 SDIToMatch$SDIFacility <- paste(' ' , SDIToMatch$SDIFacility , sep = '')
 
+SDIDic <- data.frame(original_name = SDIToMatch$facility_name , 
+                     simplified_name = SDIToMatch$SDIFacility)
+
+write.csv(SDIDic , file = 'SDIDico.csv')
 
 ########
 ##Format DHIS facility names
