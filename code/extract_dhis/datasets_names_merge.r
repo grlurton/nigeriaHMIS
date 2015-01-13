@@ -2,6 +2,34 @@ library(XML)
 library(plyr)
 library(RCurl)
 
+extract_datasets <- function(url , userID , password){
+  userpwd <- paste(userID , password , sep = ':')
+  response<-getURL(url , userpwd = userpwd, httpauth = 1L , header=FALSE , ssl.verifypeer = FALSE)
+  print('Page reached')
+  
+  parsed_page <- xmlParse(response)
+  print('Page parsed')
+  
+  
+  
+  root <- xmlRoot(parsed_page)
+  
+  dataset_ID <- xmlSApply(root[['dataSets']] , xmlGetAttr , 'id')
+  dataset_name <- xmlSApply(root[['dataSets']] , xmlGetAttr , 'name')
+  dataset_url <- xmlSApply(root[['dataSets']] , xmlGetAttr , 'href')
+  
+  output <- data.frame(dataset_ID , dataset_name , dataset_url)
+  
+  output
+}
+
+dataSets <- extract_datasets('https://dhis2nigeria.org.ng/api/dataSets.xml' ,
+                             'grlurton' , 'Glurton29')
+
+write.csv(dataSets , 'nigeria_dataSets.csv')
+
+
+
 DataSets <- read.csv('nigeria_dataSets.csv')
 
 GetDatElements <- function(Report){
