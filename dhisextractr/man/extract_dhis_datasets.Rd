@@ -7,11 +7,15 @@
 extract_dhis_datasets(url, userID, password)
 }
 \arguments{
-\item{url}{The url of the datasets list in the DHIS web api}
+\item{url}{The url of the datasets list in the DHIS web api, as a character string}
 
-\item{userID}{your username in the given DHIS2 setting}
+\item{userID}{your username in the given DHIS2 setting, as a character string}
 
-\item{password}{you password for this DHIS2 setting}
+\item{password}{you password for this DHIS2 setting, as a character string}
+}
+\value{
+Returns a data frame with each dataset as a line and for each data set, its
+name and url.
 }
 \description{
 \code{extract_dhis_datasets} goes to a specific DHIS2 implementation, and extracts

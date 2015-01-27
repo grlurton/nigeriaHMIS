@@ -4,10 +4,11 @@
 #' its full list of data sets
 #' This should be the first function to run to explore a DHIS2 instance
 #'
-#' @param url The url of the datasets list in the DHIS web api
-#' @param userID your username in the given DHIS2 setting
-#' @param password you password for this DHIS2 setting
-#'
+#' @param url The url of the datasets list in the DHIS web api, as a character string
+#' @param userID your username in the given DHIS2 setting, as a character string
+#' @param password you password for this DHIS2 setting, as a character string
+#' @return Returns a data frame with each dataset as a line and for each data set, its
+#' name and url.
 extract_dhis_datasets <- function(url , userID , password){
   userpwd <- paste(userID, password , sep = ':')
   response <- getURL(url, userpwd = userpwd, httpauth = 1L,
@@ -27,5 +28,4 @@ extract_dhis_datasets <- function(url , userID , password){
 
   output
 }
-
 
