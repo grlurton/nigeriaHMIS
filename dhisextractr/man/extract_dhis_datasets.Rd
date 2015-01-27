@@ -15,11 +15,10 @@ extract_dhis_datasets(url, userID, password)
 }
 \value{
 Returns a data frame with each dataset as a line and for each data set, its
-name and url.
+unique ID, its name and its url.
 }
 \description{
 \code{extract_dhis_datasets} goes to a specific DHIS2 implementation, and extracts
 its full list of data sets
-This should be the first function to run to explore a DHIS2 instance
 }
 
