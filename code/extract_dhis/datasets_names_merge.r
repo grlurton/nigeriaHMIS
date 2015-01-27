@@ -2,16 +2,14 @@ library(XML)
 library(plyr)
 library(RCurl)
 
-extract_datasets <- function(url , userID , password){
+extract_dhis_datasets <- function(url , userID , password){
   userpwd <- paste(userID , password , sep = ':')
   response<-getURL(url , userpwd = userpwd, httpauth = 1L , header=FALSE , ssl.verifypeer = FALSE)
   print('Page reached')
   
   parsed_page <- xmlParse(response)
   print('Page parsed')
-  
-  
-  
+
   root <- xmlRoot(parsed_page)
   
   dataset_ID <- xmlSApply(root[['dataSets']] , xmlGetAttr , 'id')
@@ -23,11 +21,14 @@ extract_datasets <- function(url , userID , password){
   output
 }
 
-dataSets <- extract_datasets('https://dhis2nigeria.org.ng/api/dataSets.xml' ,
-                             'grlurton' , 'Glurton29')
+dataSets <- extract_dhis_datasets('https://dhis2nigeria.org.ng/api/dataSets.xml' ,
+                                  'grlurton' , 'Glurton29')
 
-write.csv(dataSets , 'nigeria_dataSets.csv')
 
+
+
+
+write.csv(dataSets , 'nigeria_dataSets.csv' , row.names = FALSE)
 
 
 DataSets <- read.csv('nigeria_dataSets.csv')
