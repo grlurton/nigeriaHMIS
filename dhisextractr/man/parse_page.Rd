@@ -4,7 +4,7 @@
 \alias{parse_page}
 \title{Generic xml page parsing function}
 \usage{
-parse_page(url, userID, password)
+parse_page(url, userID, password, xml = TRUE)
 }
 \arguments{
 \item{url}{The url of the page to parse in the DHIS api, as a character string. The
@@ -14,6 +14,9 @@ generic web adress without extension.}
 \item{userID}{your username in the given DHIS2 setting, as a character string}
 
 \item{password}{your password for this DHIS2 setting, as a character string}
+
+\item{xml}{wheter the url should end with '.xml'. This has been added to add some
+flexibility in the kind of parsable urls.}
 }
 \description{
 Generic xml page parsing function

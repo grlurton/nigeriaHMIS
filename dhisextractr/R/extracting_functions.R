@@ -5,15 +5,17 @@
 #' generic web adress without extension.
 #' @param userID your username in the given DHIS2 setting, as a character string
 #' @param password your password for this DHIS2 setting, as a character string
-parse_page <- function(url, userID, password){
+#' @param xml wheter the url should end with '.xml'. This has been added to add some
+#' flexibility in the kind of parsable urls.
+parse_page <- function(url, userID, password , xml = TRUE){
   ## we want to read the xml version of pages
   ## hypothesis based on my use is we will feed either a xml adress or a generic adress
   ## just checking on this and adding the extension if needed
   nchar_url <- nchar(url)
-  if(substr(url , nchar_url-3 , nchar_url) != '.xml'){
+  if(substr(url , nchar_url-3 , nchar_url) != '.xml' & xml == TRUE){
     url <- paste(url , '.xml' , sep = '')
   }
-  print(url)
+
   userpwd <- paste(userID, password , sep = ':')
 
   response <- getURL(url, userpwd = userpwd, httpauth = 1L,
@@ -74,6 +76,42 @@ extract_data_elements <- function(dataset_url, userID, password){
   out
 }
 
+#'Extract the list of Organisation Units in the DHIS setting
+#'
+#' \code{extract_orgunits_list} extracts the list of Organisation Units recorded in a
+#' DHIS setting
+#'
+#' @param url The url of the organisation units page in the DHIS api. The function is
+#' made to parse xml pages, so input url should be an xml adress or a generic web
+#' adress without extension.
+#' @param userID your username in the given DHIS2 setting, as a character string
+#' @param password your password for this DHIS2 setting, as a character string
+#' @return Returns a data frame with each organisation unit as a line and for each
+#' organisation unit, its unique ID, its name and its url.
+extract_orgunits_list <- function(org_unit_page_url, userID, password){
+  out <- data.frame(org_unit_ID = character() ,
+                    org_unit_name = character()  ,
+                    org_unit_url = character() )
+  # We have to parse all the pages with orgunits
+  #(may not be cleanest / most efficient)
+  rootPage <- parse_page(org_unit_page_url , userID , password)
+  ## Get number of pages
+  NPages <- as.numeric(xmlValue(rootPage[['pager' ]][['pageCount']]))
 
+  for (page in 1:NPages){
+    print(paste('Parsing page' , page , 'out of' , NPages , sep = ' '))
+    url <- paste(org_unit_page_url , '.xml?page=' , page , sep = '')
+    print(url)
+    root <- parse_page(url , userID , password , xml = FALSE)
+    if (!is.null(root[['organisationUnits']])){
+      org_unit_ID <- xmlSApply(root[['organisationUnits']] , xmlGetAttr , 'id')
+      org_unit_name <- xmlSApply(root[['organisationUnits']] , xmlGetAttr , 'name')
+      org_unit_url <- xmlSApply(root[['organisationUnits']] , xmlGetAttr , 'href')
+    }
+    loop_out <- data.frame(org_unit_ID , org_unit_name , org_unit_url )
+    out <- rbind(out , loop_out)
+  }
+  out
+}
 
 
