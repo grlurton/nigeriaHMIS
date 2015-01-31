@@ -12,3 +12,4 @@ Imports:
     XML,
     plyr,
     RCurl
+Suggests: testthat

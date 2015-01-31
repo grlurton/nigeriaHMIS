@@ -9,10 +9,11 @@ extract_data_elements(dataset_url, userID, password)
 \arguments{
 \item{userID}{your username in the given DHIS2 setting, as a character string}
 
-\item{password}{you password for this DHIS2 setting, as a character string}
+\item{password}{your password for this DHIS2 setting, as a character string}
 
 \item{url}{The url of the dataset page in the DHIS api, from which we want to
-#'extract the data elements.}
+extract the data elements. The function is made to parse xml pages, so input url
+should be an xml adress or a generic web adress without extension.}
 }
 \value{
 Returns a data frame with each data element as a line and for each data
