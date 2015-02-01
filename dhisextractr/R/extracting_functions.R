@@ -115,3 +115,64 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
 }
 
 
+
+
+
+#'Extract information about an Orgunit
+#'
+#' \code{extract_org_unit} extracts all the information about
+#'
+#' @param url The url of the organisation unit for which we want to extract
+#' information. The function is made to parse xml pages, so input url should be an xml
+#' adress or a generic web adress without extension.
+#' @param userID your username in the given DHIS2 setting, as a character string
+#' @param password your password for this DHIS2 setting, as a character string
+#' @return Returns a list with three elements :
+#' * __Metadata__ For each organization unit, includes its geolocalization and
+#' reference to parent unit
+#'
+#' * __Group __ Groups in which the organization unit is included. This is where the
+#' type of organization unit is stored
+#'
+#' * __Datasets__ Datasets for which the organisation unit should communicate data
+extract_org_unit <- function(org_unit_page_url, userID, password){
+  root <- parse_page(org_unit_page_url , userID , password)
+
+  ##Extraction of org units metadata
+  id <- xmlAttrs(root)[['id']]
+  coordinates <- xmlValue(root[['coordinates']])
+  opening_date <- xmlValue(root[['openingDate']])
+  name <- xmlValue(root[['displayName']])
+  active <- xmlValue(root[['active']])
+  parent_id <- xmlAttrs(root[['parent']])[['id']]
+  parent_name <- xmlAttrs(root[['parent']])[['name']]
+  parent_url <- xmlAttrs(root[['parent']])[['href']]
+  org_unit_metadata <- data.frame(id , coordinates , opening_date , name ,
+                                  active , parent_id , parent_name , parent_url)
+
+  ##Extraction of org units groups
+  org_unit_group <- data.frame(group_ID = character() , group_name = character() ,
+                               group_url = character())
+  if (!is.null(root[['organisationUnitGroups']])){
+    Groups <- root[['organisationUnitGroups']]
+    group_ID <- xmlSApply(Groups , xmlGetAttr , 'id')
+    group_name <- xmlSApply(Groups , xmlGetAttr , 'name')
+    group_url <- xmlSApply(Groups , xmlGetAttr , 'href')
+    org_unit_group <- data.frame(group_ID , group_name , group_url)
+  }
+
+  ##Extraction of org units datasets
+  org_unit_dataset <- data.frame(dataset_ID = character() ,
+                                 dataset_name = character() ,
+                                 dataset_url = character())
+  if (!is.null(root[['dataSets']])){
+    Datasets <- root[['dataSets']]
+    dataset_ID <- xmlSApply(Datasets , xmlGetAttr , 'id')
+    dataset_name <- xmlSApply(Datasets , xmlGetAttr , 'name')
+    dataset_url <- xmlSApply(Datasets , xmlGetAttr , 'href')
+    org_unit_dataset <- data.frame(dataset_ID , dataset_name , dataset_url)
+  }
+
+  out <- list(org_unit_metadata , org_unit_group , org_unit_dataset)
+  out
+}
