@@ -95,7 +95,7 @@ extract_data_elements <- function(dataset_url, userID, password){
   out <- data.frame(data_element_ID = character() ,
                     data_element_name = character()  ,
                     data_element_url = character() )
-  extract_info(url , root , 'dataElements' , out)
+  extract_info(dataset_url , root , 'dataElements' , out)
 }
 
 #'Extract the list of Organisation Units in the DHIS setting
