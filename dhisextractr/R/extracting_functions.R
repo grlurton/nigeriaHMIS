@@ -187,4 +187,5 @@ make_dhis_urls <- function(dhis_url){
   data_sets_url <- paste(dhis_url , '/api/dataSets' , sep = '')
   data_elements_url <- paste(dhis_url , '/api/dataElements' , sep = '')
   org_units_url <- paste(dhis_url , '/api/organisationUnits' , sep = '')
+  data.frame(data_sets_url , data_elements_url , org_units_url)
 }
