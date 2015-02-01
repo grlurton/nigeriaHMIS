@@ -135,8 +135,8 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
 #' type of organization unit is stored
 #'
 #' * __Datasets__ Datasets for which the organisation unit should communicate data
-extract_org_unit <- function(org_unit_page_url, userID, password){
-  root <- parse_page(org_unit_page_url , userID , password)
+extract_org_unit <- function(org_unit_url, userID, password){
+  root <- parse_page(org_unit_url , userID , password)
 
   ##Extraction of org units metadata
   id <- xmlAttrs(root)[['id']]
@@ -175,4 +175,16 @@ extract_org_unit <- function(org_unit_page_url, userID, password){
 
   out <- list(org_unit_metadata , org_unit_group , org_unit_dataset)
   out
+}
+
+#'Make relevant urls in DHIS web api
+#'
+#' \code{extract_org_unit} takes the main adress of a DHIS implementation and returns
+#' the relevant adresses in the web api that will be used for extracting data.
+#'
+#' @param url The url of the DHIS implementation
+make_dhis_urls <- function(dhis_url){
+  data_sets_url <- paste(dhis_url , '/api/dataSets' , sep = '')
+  data_elements_url <- paste(dhis_url , '/api/dataElements' , sep = '')
+  org_units_url <- paste(dhis_url , '/api/organisationUnits' , sep = '')
 }

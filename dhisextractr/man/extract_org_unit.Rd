@@ -4,7 +4,7 @@
 \alias{extract_org_unit}
 \title{Extract information about an Orgunit}
 \usage{
-extract_org_unit(org_unit_page_url, userID, password)
+extract_org_unit(org_unit_url, userID, password)
 }
 \arguments{
 \item{userID}{your username in the given DHIS2 setting, as a character string}
