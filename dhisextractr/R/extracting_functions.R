@@ -115,7 +115,7 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
                     org_unit_name = character()  ,
                     org_unit_url = character() )
   root <- parse_page(org_unit_page_url , userID , password)
-  extract_info(url , root , 'organisationUnits' , out)
+  extract_info(org_unit_page_url , root , 'organisationUnits' , out)
 }
 
 
@@ -178,9 +178,21 @@ extract_org_unit <- function(org_unit_url, userID, password){
   out
 }
 
+#'Extracts and merges all orgunits from list
+#'
+#' \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
+#' the relevant adresses in the web api that will be used for extracting data.
+#'
+#' @param url The url of the DHIS implementation
+extract_all_orgunits <- function
+
+
+
+
+
 #'Make relevant urls in DHIS web api
 #'
-#' \code{extract_org_unit} takes the main adress of a DHIS implementation and returns
+#' \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
 #' the relevant adresses in the web api that will be used for extracting data.
 #'
 #' @param url The url of the DHIS implementation
