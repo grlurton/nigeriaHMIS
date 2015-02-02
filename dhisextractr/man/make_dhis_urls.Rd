@@ -10,7 +10,7 @@ make_dhis_urls(dhis_url)
 \item{url}{The url of the DHIS implementation}
 }
 \description{
-\code{extract_org_unit} takes the main adress of a DHIS implementation and returns
+\code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
 the relevant adresses in the web api that will be used for extracting data.
 }
 

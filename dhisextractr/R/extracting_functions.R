@@ -20,10 +20,8 @@ parse_page <- function(url, userID, password , xml = TRUE){
 
   response <- getURL(url, userpwd = userpwd, httpauth = 1L,
                      header=FALSE, ssl.verifypeer = FALSE)
-  print('Page reached')
 
   parsed_page <- xmlTreeParse(response)
-  print('Page parsed')
 
   root <- xmlRoot(parsed_page)
   root
@@ -137,17 +135,22 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
 #'
 #' * __Datasets__ Datasets for which the organisation unit should communicate data
 extract_org_unit <- function(org_unit_url, userID, password){
+  print(org_unit_url)
   root <- parse_page(org_unit_url , userID , password)
 
   ##Extraction of org units metadata
-  id <- xmlAttrs(root)[['id']]
-  coordinates <- xmlValue(root[['coordinates']])
-  opening_date <- xmlValue(root[['openingDate']])
-  name <- xmlValue(root[['displayName']])
-  active <- xmlValue(root[['active']])
-  parent_id <- xmlAttrs(root[['parent']])[['id']]
-  parent_name <- xmlAttrs(root[['parent']])[['name']]
-  parent_url <- xmlAttrs(root[['parent']])[['href']]
+    parent_id <- parent_name <- parent_url <- NA
+
+    id <- xmlAttrs(root)[['id']]
+    coordinates <- xmlValue(root[['coordinates']])
+    opening_date <- xmlValue(root[['openingDate']])
+    name <- xmlValue(root[['displayName']])
+    active <- xmlValue(root[['active']])
+  if (!is.null(root[['parent']])){
+    parent_id <- xmlAttrs(root[['parent']])[['id']]
+    parent_name <- xmlAttrs(root[['parent']])[['name']]
+    parent_url <- xmlAttrs(root[['parent']])[['href']]
+  }
   org_unit_metadata <- data.frame(id , coordinates , opening_date , name ,
                                   active , parent_id , parent_name , parent_url)
 
@@ -177,14 +180,6 @@ extract_org_unit <- function(org_unit_url, userID, password){
   out <- list(org_unit_metadata , org_unit_group , org_unit_dataset)
   out
 }
-
-#'Extracts and merges all orgunits from list
-#'
-#' \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
-#' the relevant adresses in the web api that will be used for extracting data.
-#'
-#' @param url The url of the DHIS implementation
-extract_all_orgunits <- function
 
 
 
