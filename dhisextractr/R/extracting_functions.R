@@ -8,14 +8,14 @@
 #' @param xml wheter the url should end with '.xml'. This has been added to add some
 #' flexibility in the kind of parsable urls.
 parse_page <- function(url, userID, password , xml = TRUE){
-  ## we want to read the xml version of pages
+  ## we want to read the xml version of pagse
   ## hypothesis based on my use is we will feed either a xml adress or a generic adress
   ## just checking on this and adding the extension if needed
+  url <- as.character(url)
   nchar_url <- nchar(url)
-  if(substr(url , nchar_url-3 , nchar_url) != '.xml' & xml == TRUE){
+  if(substr(url , nchar_url-3 , nchar_url) != '.xml' && xml == TRUE){
     url <- paste(url , '.xml' , sep = '')
   }
-
   userpwd <- paste(userID, password , sep = ':')
 
   response <- getURL(url, userpwd = userpwd, httpauth = 1L,
@@ -38,14 +38,14 @@ parse_page <- function(url, userID, password , xml = TRUE){
 #' @param root root of this page, as extracted by \code{\link{parse_page}}
 #' @param node_name the name of the name we wish to extract
 #' @param out an empty dataframe in which to return the output (there are more elegant ways to do it for sure, see it later).
-extract_info <- function(url_page , root , node_name , out){
+extract_info <- function(url_page , root , node_name , out , userID , password){
   NPages <- as.numeric(xmlValue(root[['pager' ]][['pageCount']]))
   NPages[is.na(NPages)] <- 1
   for (page in 1:NPages){
     ID <- name <- url <- ''
     print(paste('Parsing page' , page , 'out of' , NPages , sep = ' '))
-    url_page <- paste(url_page , '.xml?page=' , page , sep = '')
-    root <- parse_page(url_page , userID , password , xml = FALSE)
+    url_read <- paste(url_page , '.xml?page=' , page , sep = '')
+    root <- parse_page(url_read , userID , password , xml = FALSE)
     if (!is.null(root[[node_name]]) & length(root[[node_name]]) > 0){
       ID <- xmlSApply(root[[node_name]] , xmlGetAttr , 'id')
       name <- xmlSApply(root[[node_name]] , xmlGetAttr , 'name')
@@ -75,7 +75,7 @@ extract_dhis_datasets <- function(url , userID , password){
   out <- data.frame(datasets_ID = character() ,
                     datasets_name = character()  ,
                     datasets_url = character() )
-  extract_info(url , root , 'dataSets' , out)
+  extract_info(url , root , 'dataSets' , out , userID , password)
 }
 
 #'Extract the list of data elements in a DHIS data set
@@ -94,7 +94,7 @@ extract_data_elements <- function(dataset_url, userID, password){
   out <- data.frame(data_element_ID = character() ,
                     data_element_name = character()  ,
                     data_element_url = character() )
-  extract_info(dataset_url , root , 'dataElements' , out)
+  extract_info(dataset_url , root , 'dataElements' , out , userID , password)
 }
 
 #'Extract the list of Organisation Units in the DHIS setting
@@ -114,7 +114,7 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
                     org_unit_name = character()  ,
                     org_unit_url = character() )
   root <- parse_page(org_unit_page_url , userID , password)
-  extract_info(org_unit_page_url , root , 'organisationUnits' , out)
+  extract_info(org_unit_page_url , root , 'organisationUnits' , out , userID , password)
 }
 
 
