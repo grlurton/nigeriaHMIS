@@ -42,10 +42,11 @@ extract_info <- function(url_page , root , node_name , out){
   NPages <- as.numeric(xmlValue(root[['pager' ]][['pageCount']]))
   NPages[is.na(NPages)] <- 1
   for (page in 1:NPages){
+    ID <- name <- url <- ''
     print(paste('Parsing page' , page , 'out of' , NPages , sep = ' '))
-    url <- paste(url_page , '.xml?page=' , page , sep = '')
-    root <- parse_page(url , userID , password , xml = FALSE)
-    if (!is.null(root[[node_name]])){
+    url_page <- paste(url_page , '.xml?page=' , page , sep = '')
+    root <- parse_page(url_page , userID , password , xml = FALSE)
+    if (!is.null(root[[node_name]]) & length(root[[node_name]]) > 0){
       ID <- xmlSApply(root[[node_name]] , xmlGetAttr , 'id')
       name <- xmlSApply(root[[node_name]] , xmlGetAttr , 'name')
       url <- xmlSApply(root[[node_name]] , xmlGetAttr , 'href')
@@ -180,10 +181,6 @@ extract_org_unit <- function(org_unit_url, userID, password){
   out <- list(org_unit_metadata , org_unit_group , org_unit_dataset)
   out
 }
-
-
-
-
 
 #'Make relevant urls in DHIS web api
 #'
