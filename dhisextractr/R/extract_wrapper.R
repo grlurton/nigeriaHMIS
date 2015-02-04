@@ -34,12 +34,13 @@ extract_all_data <- function(base_url , data_sets , org_units , deb_period , end
                              userID , password){
   extract_data <- ddply(org_units , .(org_unit_ID) ,
                         function(org_units){
+                          print(as.character(org_units$org_unit_ID))
                           url_call <- make_extract_call(base_url ,
                                                         data_sets , org_units ,
                                                         deb_period , end_period)
                           extract_data(url_call , userID , password)
                         } ,
-                        .progress = 'text'
+                        .progress = 'win'
   )
   extract_data
 }
