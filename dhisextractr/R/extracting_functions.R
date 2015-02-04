@@ -38,12 +38,14 @@ parse_page <- function(url, userID, password , xml = TRUE){
 #' @param root root of this page, as extracted by \code{\link{parse_page}}
 #' @param node_name the name of the name we wish to extract
 #' @param out an empty dataframe in which to return the output (there are more elegant ways to do it for sure, see it later).
-extract_info <- function(url_page , root , node_name , out , userID , password){
+extract_info <- function(url_page , root , node_name , out , userID , password , monitor = FALSE){
   NPages <- as.numeric(xmlValue(root[['pager' ]][['pageCount']]))
   NPages[is.na(NPages)] <- 1
   for (page in 1:NPages){
     ID <- name <- url <- ''
-    print(paste('Parsing page' , page , 'out of' , NPages , sep = ' '))
+    if(monitor == TRUE){
+      print(paste('Parsing page' , page , 'out of' , NPages , sep = ' '))
+    }
     url_read <- paste(url_page , '.xml?page=' , page , sep = '')
     root <- parse_page(url_read , userID , password , xml = FALSE)
     if (!is.null(root[[node_name]]) & length(root[[node_name]]) > 0){
@@ -114,7 +116,7 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
                     org_unit_name = character()  ,
                     org_unit_url = character() )
   root <- parse_page(org_unit_page_url , userID , password)
-  extract_info(org_unit_page_url , root , 'organisationUnits' , out , userID , password)
+  extract_info(org_unit_page_url , root , 'organisationUnits' , out , userID , password , TRUE)
 }
 
 
@@ -136,7 +138,6 @@ extract_orgunits_list <- function(org_unit_page_url, userID, password){
 #'
 #' * __Datasets__ Datasets for which the organisation unit should communicate data
 extract_org_unit <- function(org_unit_url, userID, password){
-  print(org_unit_url)
   root <- parse_page(org_unit_url , userID , password)
 
   ##Extraction of org units metadata
@@ -187,12 +188,12 @@ extract_org_unit <- function(org_unit_url, userID, password){
 #'
 #'
 #'
-extract_categories <- function(org_unit_page_url, userID, password){
+extract_categories <- function(categories_url, userID, password){
   out <- data.frame(org_unit_ID = character() ,
                     org_unit_name = character()  ,
                     org_unit_url = character() )
-  root <- parse_page(org_unit_page_url , userID , password)
-  extract_info(org_unit_page_url , root , 'categoryOptionCombos' , out , userID , password)
+  root <- parse_page(categories_url , userID , password)
+  extract_info(categories_url , root , 'categoryOptionCombos' , out , userID , password)
 }
 
 
@@ -213,5 +214,6 @@ make_dhis_urls <- function(dhis_url){
   data_sets_url <- paste(dhis_url , '/api/dataSets' , sep = '')
   data_elements_url <- paste(dhis_url , '/api/dataElements' , sep = '')
   org_units_url <- paste(dhis_url , '/api/organisationUnits' , sep = '')
-  data.frame(data_sets_url , data_elements_url , org_units_url)
+  data_elements_categories <- paste(dhis_url , '/api/categoryOptionCombos' , sep = '')
+  data.frame(data_sets_url , data_elements_url , data_elements_categories , org_units_url)
 }

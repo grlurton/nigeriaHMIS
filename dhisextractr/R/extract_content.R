@@ -10,11 +10,16 @@ extract_dhis_content <- function(url , userID, password , output = getwd() ){
   print('Extracting Data Elements')
   data_elements <- ddply(data_sets , .(datasets_ID , datasets_name) ,
                          function(data_sets){
-                           print(as.character(data_sets$datasets_ID))
                            extract_data_elements(as.character(data_sets$datasets_url) ,
                                                  userID , password)
                            },
                          .progress = 'text')
+
+  print('Extracting Categories')
+  data_elements_categories <- extract_categories(as.character(urls$data_elements_categories) ,
+                                                 userID ,
+                                                 password)
+
 
   print('Extracting Organisation Units List')
   org_units_list <- extract_orgunits_list(as.character(urls$org_units_url) ,
@@ -40,7 +45,7 @@ extract_dhis_content <- function(url , userID, password , output = getwd() ){
   org_units_group <- ldply (extracted_orgunits, function(list) data.frame(list[[2]]))
   org_units_report <- ldply (extracted_orgunits, function(list) data.frame(list[[3]]))
 
-  list(data_sets , data_elements , org_units_list ,
+  list(data_sets , data_elements , data_elements_categories , org_units_list ,
        org_units_description , org_units_group , org_units_report)
 }
 
