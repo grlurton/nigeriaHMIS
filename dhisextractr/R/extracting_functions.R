@@ -182,6 +182,27 @@ extract_org_unit <- function(org_unit_url, userID, password){
   out
 }
 
+#'Extract the categories for data elements
+#'
+#'
+#'
+#'
+extract_categories <- function(org_unit_page_url, userID, password){
+  out <- data.frame(org_unit_ID = character() ,
+                    org_unit_name = character()  ,
+                    org_unit_url = character() )
+  root <- parse_page(org_unit_page_url , userID , password)
+  extract_info(org_unit_page_url , root , 'categoryOptionCombos' , out , userID , password)
+}
+
+
+
+
+
+
+
+
+
 #'Make relevant urls in DHIS web api
 #'
 #' \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
