@@ -197,13 +197,6 @@ extract_categories <- function(categories_url, userID, password){
 }
 
 
-
-
-
-
-
-
-
 #'Make relevant urls in DHIS web api
 #'
 #' \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
