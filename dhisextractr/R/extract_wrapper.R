@@ -38,7 +38,16 @@ extract_all_data <- function(base_url , data_sets , org_units , deb_period , end
                           url_call <- make_extract_call(base_url ,
                                                         data_sets , org_units ,
                                                         deb_period , end_period)
-                          extract_data(url_call , userID , password)
+                          out <- data.frame(data_element_ID = org_units$org_unit_ID,
+                                            period = '' ,
+                                            org_unit_ID = '',
+                                            value = '' ,
+                                            category = '' ,
+                                            last_update = '')
+                          print(out)
+                          try({out <- extract_data(url_call , userID , password)})
+
+                          out
                         } ,
                         .progress = 'win'
   )
