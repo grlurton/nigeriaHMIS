@@ -44,7 +44,6 @@ extract_all_data <- function(base_url , data_sets , org_units , deb_period , end
                                             value = '' ,
                                             category = '' ,
                                             last_update = '')
-                          print(out)
                           try({out <- extract_data(url_call , userID , password)})
 
                           out
