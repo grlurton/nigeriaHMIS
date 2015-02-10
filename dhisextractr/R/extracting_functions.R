@@ -185,9 +185,16 @@ extract_org_unit <- function(org_unit_url, userID, password){
 
 #'Extract the categories for data elements
 #'
+#' \code{extract_categories} extracts the list of categories that are used for different
+#' data elements.
 #'
-#'
-#'
+#' @param categories_url The url of the categories page in the DHIS api. The function is
+#' made to parse xml pages, so input url should be an xml adress or a generic web
+#' adress without extension.
+#' @param userID your username in the given DHIS2 setting, as a character string
+#' @param password your password for this DHIS2 setting, as a character string
+#' @return Returns a data frame with each category as a line and for each
+#' category, its unique ID, its name and its url.
 extract_categories <- function(categories_url, userID, password){
   out <- data.frame(org_unit_ID = character() ,
                     org_unit_name = character()  ,
@@ -202,11 +209,11 @@ extract_categories <- function(categories_url, userID, password){
 #' \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns
 #' the relevant adresses in the web api that will be used for extracting data.
 #'
-#' @param url The url of the DHIS implementation
-make_dhis_urls <- function(dhis_url){
-  data_sets_url <- paste(dhis_url , '/api/dataSets' , sep = '')
-  data_elements_url <- paste(dhis_url , '/api/dataElements' , sep = '')
-  org_units_url <- paste(dhis_url , '/api/organisationUnits' , sep = '')
-  data_elements_categories <- paste(dhis_url , '/api/categoryOptionCombos' , sep = '')
+#' @param base_url The url of the DHIS implementation
+make_dhis_urls <- function(base_url){
+  data_sets_url <- paste(base_url , '/api/dataSets' , sep = '')
+  data_elements_url <- paste(base_url , '/api/dataElements' , sep = '')
+  org_units_url <- paste(base_url , '/api/organisationUnits' , sep = '')
+  data_elements_categories <- paste(base_url , '/api/categoryOptionCombos' , sep = '')
   data.frame(data_sets_url , data_elements_url , data_elements_categories , org_units_url)
 }

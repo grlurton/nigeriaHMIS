@@ -4,10 +4,10 @@
 \alias{make_dhis_urls}
 \title{Make relevant urls in DHIS web api}
 \usage{
-make_dhis_urls(dhis_url)
+make_dhis_urls(base_url)
 }
 \arguments{
-\item{url}{The url of the DHIS implementation}
+\item{base_url}{The url of the DHIS implementation}
 }
 \description{
 \code{make_dhis_urls} takes the main adress of a DHIS implementation and returns

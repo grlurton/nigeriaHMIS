@@ -6,7 +6,8 @@
 \code{extract_info} goes to a specific DHIS2 element url, and extracts attributes
 name , id and href. It can extract elements that span on multiple pages}
 \usage{
-extract_info(url_page, root, node_name, out)
+extract_info(url_page, root, node_name, out, userID, password,
+  monitor = FALSE)
 }
 \arguments{
 \item{url_page}{The default url of the elemtns to parse in the DHIS api, as a
