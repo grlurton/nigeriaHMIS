@@ -1,3 +1,12 @@
+#'Extracting GPS coordinates
+#'
+#' \code{format_GPS} extracts GPS coordinates for extracted organization units
+#'
+#' @param org_units_description A data frame of organization descriptions as extracted with
+#' \link{extract_org_unit}.
+#' @return Returns a list of data frames in which the columns are the organisation unit ID,
+#' the longitude and the latitude of the organisation units. Each element of the list is an
+#' organization unit.
 format_GPS <- function(org_units_description){
   org_units_description$coordinates <- gsub('\\[|\\]', '' ,
                                             org_units_description$coordinates)
@@ -22,6 +31,15 @@ format_GPS <- function(org_units_description){
   org_units_coords
 }
 
+#'Make shapefiles for organization units
+#'
+#' \code{make_shapefiles} makes shapefiles from a list of organization units coordinates.
+#'
+#' @param formatted_coordinates A list of organization units and their GPS coordinates.
+#' \link{format_GPS}.
+#' @return Returns a list of two elements. The first element of the list is a shapefile of
+#' point organization units. The second element is a shapefile of polygon organization
+#' units.
 make_shapefiles <- function(formatted_coordinates){
   points_shapefile <- poly_shapefile<-  data.frame(org_unit_ID = character() ,
                                                    long = character() ,
@@ -51,6 +69,15 @@ make_shapefiles <- function(formatted_coordinates){
   list(points_shapefile , poly_shapefile)
 }
 
+#'Make shapefiles for organization units
+#'
+#' \code{extract_geolocalisation} makes shapefiles from extracted organization units
+#'
+#' @param org_units_description A data frame of organization descriptions as extracted with
+#' \link{extract_org_unit}.
+#' @return Returns a list of two elements. The first element of the list is a shapefile of
+#' point organization units. The second element is a shapefile of polygon organization
+#' units.
 extract_geolocalisation <- function(org_units_description){
   formatted_gps <- dlply(org_units_description , .(org_unit_ID) ,
                          function(org_units_description){
