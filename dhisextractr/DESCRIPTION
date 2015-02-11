@@ -11,5 +11,7 @@ LazyData: TRUE
 Imports:
     XML,
     plyr,
-    RCurl
+    RCurl,
+    shapefiles,
+    maptools
 Suggests: testthat
