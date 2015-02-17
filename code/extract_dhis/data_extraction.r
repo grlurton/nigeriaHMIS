@@ -1,81 +1,39 @@
+library("dhisextractr")
 library(RCurl)
 library(XML)
-library(zoo)
+library(plyr)
 
-setwd('J://Project/phc/nga/dhis')
+extracted_content <- extract_dhis_content(base_url = 'https://dhis2nigeria.org.ng/' , 
+                                          userID = 'grlurton' , password = 'Glurton29')
 
-DfDataSets <- read.csv('nigeria_dataSets.csv')
-DfOrgUnit <- read.csv('nigeria_orgunits.csv')
-DfDataElements <- read.csv('nigeria_data_elements.csv')
+data_sets <- extracted_content[[1]]
+data_elements <- extracted_content[[2]]
+data_categories <- extracted_content[[3]]
+org_units <- extracted_content[[4]]
+org_units_description <- extracted_content[[5]]
+org_units_groups <- extracted_content[[6]]
+org_units_data_sets <- extracted_content[[7]]
 
-GetReport <- function(Site , DateStart , DateEnd){
-  url <- paste('https://dhis2nigeria.org.ng/api/dataValueSets.xml?' , 'dataSet=MZ8Z16lPJoP&' ,
-               'dataSet=JwcqPVkjUWE&' , 'dataSet=zTii0mzVwQs&', 'dataSet=zAoBXwRpQ7X&', 'dataSet=lyVV9bPLlVy&', 
-               'dataSet=SCGPsnXy6IZ&', 
-               'dataSet=USY6TIGc4JS&', 'dataSet=XpbmnAxeUA8&', 'dataSet=xIgRQKDjAdv&', 'dataSet=NoSIZ9aEz4c&', 
-               'orgUnit=' , Site , 
-               '&startDate=' , DateStart , '&endDate=' , DateEnd, sep = '')
-  #print(Site)
-  
-  response<-getURL(url , userpwd="grlurton:Glurton29" , httpauth = 1L , 
-                   header=FALSE , ssl.verifypeer = FALSE)
-  
-  if(substr(response , 1 , 5) == "<?xml"){
-    ParsedPage <- xmlParse(response)
-    root <- xmlRoot(ParsedPage)
-    
-    dataElement <- unlist(as.character(xmlSApply(root, xmlGetAttr, "dataElement")))
-    period <- unlist(as.character(xmlSApply(root, xmlGetAttr, "period")))
-    orgUnit <- unlist(as.character(xmlSApply(root , xmlGetAttr , "orgUnit")))
-    value <- unlist(as.character(xmlSApply(root , xmlGetAttr , "value")))
-    categoryOptionCombo <- unlist(as.character(xmlSApply(root , xmlGetAttr , "categoryOptionCombo")))
-    storedBy <- unlist(as.character(xmlSApply(root , xmlGetAttr , "storedBy")))
-    lastUpdate <-unlist(as.character(xmlSApply(root , xmlGetAttr , "lastUpdated")))
-    comment <- unlist(as.character(xmlSApply(root , xmlGetAttr , "comment")))
-    followUp <- unlist(as.character(xmlSApply(root , xmlGetAttr  , "followUp")))
-    
-    out <- data.frame(dataElement , period , orgUnit , value , categoryOptionCombo , storedBy  , 
-                      lastUpdate , comment , followUp) 
-    return(out)
-  }
-} 
-  
-##Running  the function on unit x reports
+time_deb <- Sys.time()
 
-OrgUnits <- read.csv('ExtractOrgUnitsRaw.csv')
-ids <- unique(as.character(OrgUnits$UnitId))
-
-#SampleSites <- sample(seq(1, nrow(DfOrgUnit)), 100 , replace = FALSE)
-
-hash <- matrix( seq(signif(length(ids) , digits = 3)) , ncol = 100)
-
-Data <- data.frame(dataElement = character() , period = character() , orgUnit = character() ,
-                   categoryOptionCombo = character() , value = character() , Report = character())
-
-TimeStart <- Sys.time()
-for (i in seq(nrow(hash))){
-  unitIds <- paste(ids[hash[i,]],collapse='&orgUnit=')
-  extract <- GetReport(unitIds , '2008-01-01' , '2014-08-01')
-  Data <- rbind(Data , extract)
-  Time <- Sys.time()
-  remaining <- (nrow(hash) - i)*((Time - TimeStart) / i)
-  print(paste(i , ' itérations - Temps restant : ' , remaining , sep = ''))
-} 
-
-write.csv(Data , 'Data.csv')
-
-UnitsWithData <- unique(Data$orgUnit)
-write.csv(UnitsWithData , 'UnitsWithData.csv' , row.names = FALSE)
+extracted_kenya <- extract_all_data(base_url = 'https://dhis2nigeria.org.ng/' , userID = 'grlurton' , 
+                                    password = "Glurton29" ,
+                                    deb_period = '2009-01-01' , end_period = '2015-01-01' ,
+                                    org_units = org_units ,
+                                    data_sets = data_sets )
+time_end <- Sys.time()
 
 
+setwd('J://')
+write.csv(data_sets , 'data_sets.csv')
+write.csv(data_elements , 'data_elements.csv')
+write.csv(data_categories , 'data_categories.csv')
+write.csv(org_units , 'org_units.csv')
+write.csv(org_units_data_sets , 'org_units_data_sets.csv')
+write.csv(org_units_groups, 'org_units_groups.csv')
+write.csv(org_units_description, 'org_units_description.csv')
 
-ReportsSites <- merge(Reports , subset(DfOrgUnit , select = c(unitName , unitLevel , unitid) ) , 
-                      by.x = 'orgUnit' , by.y = 'unitid' , all.y = FALSE)
-ReportsComplete <- merge(ReportsSites, subset(DfDataElements , select = c(DEName , DEid) ) , 
-                         by.x = 'dataElement' , by.y = 'DEid' , all.y = FALSE)
-ReportsFinal <- subset(ReportsComplete  , select = c(period , unitName , unitLevel , DEName , value , Report))
 
+write.csv(extracted_kenya , 'data_nigeria.csv')
 
-
-write.csv(ReportsComplete , 'FullData.csv')
-write.csv(ReportsFinal , 'Data.csv')
+save.image('nigeria_initial_extraction.rdata')
