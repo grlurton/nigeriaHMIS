@@ -7,7 +7,7 @@ library(shapefiles)
 
 setwd('J://Project/dhis/nigeria/extracted_data')
 
-extracted_content <- extract_dhis_content(base_url = 'https://dhis2nigeria.org.ng/' , 
+extracted_content <- extract_dhis_content(base_url = 'https://dhis2nigeria.org.ng/dhis' , 
                                           userID = 'grlurton' , password = 'Glurton29')
 
 data_sets <- extracted_content[[1]]
