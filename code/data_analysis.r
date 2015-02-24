@@ -3,23 +3,27 @@ setwd('J://Project/phc/nga/dhis')
 library(ggplot2)
 library(zoo)
 
-Data <- read.csv('Data.csv')
+data <- read.csv('Data.csv')
+indics <- read.csv('table_indicators.csv')
+orgUnits <- read.csv('table_location.csv')
+OrgUnitsHierarchy <- read.csv('HierarchyData.csv')
 
-#Data$lastupdated <- as.Date(Data$lastupdated)
-Data$dataElement <- as.character(Data$dataElement)
+data$dataElement <- as.character(Data$dataElement)
 
-Data$period <- as.Date(as.yearmon(Data$period, "%Y%m"))
+data$period <- as.Date(as.yearmon(Data$period, "%Y%m"))
 
 qplot(data = Data , x = period , binwidth = 30) +
   theme_bw()
 
-sort(table(Data$dataElement))
+data_fac <- subset(data , 'orgUnit' %in% OrgUnitsHierarchy$Level5ID)
+data_fac <- merge(data_fac , indics , by.x = 'dataElement' , by.y = 'indicator_ID' ,
+              all.y = FALSE)
+data_fac <- merge(data_fac , OrgUnitsHierarchy , by.x = 'orgUnit' , by.y = 'Level5ID')
+data_fac <- subset(data_fac , !is.na(value))
 
-indics <- read.csv('table_indicators.csv')
-OrgUnits <- read.csv('table_location.csv')
 
 
-DataAll <- Data
+
 Data <- merge(DataAll , indics , by.x = 'dataElement' , by.y = 'indicator_ID' ,
               all.y = FALSE)
 
