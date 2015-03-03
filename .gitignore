@@ -13,3 +13,5 @@ out_indics.txt
 out_orgunit.csv
 table_facilities.csv
 nigeriahmis.Rproj
+.RDataTmp
+NigeriaWD_indicmap.Rdata
