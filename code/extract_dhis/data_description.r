@@ -1,31 +1,46 @@
 setwd('C://users/grlurton/Desktop/dhis')
 
 library(plyr)
-
+library(ggplot2)
+library(zoo)
+library(scales)
 ## Load and format data
 
-data_fac <- read.csv('data_fac.csv')
-
-data_fac$data_facElement <- as.character(data_fac$data_facElement)
-data_fac$period <- as.Date(as.yearmon(data_fac$period, "%Y%m"))
-
-qplot(data_fac = data_fac , x = period , binwidth = 30) +
-  theme_bw()
-
-data_fac <- subset(data_fac , orgUnit %in% OrgUnitsHierarchy$Level5ID)
-
+data_fac <- read.csv('data.csv')
 
 ## Function to take out elements that are duplicated (for security, no reason that this
 ## should happen)
 
-
-
-
+get_unique <- function(data , identifier){
+  data_tab <- ddply(data , as.quoted(identifier) , nrow)
+  data_tab <- subset(data_tab , V1 < 2)
+  print(nrow(data_tab))
+  unique_data <- data[data[ , identifier] %in% data_tab[ ,identifier ],]
+  print(nrow(unique_data))
+  unique_data
+}
 
 indics <- read.csv('table_indicators.csv')
-orgUnits <- read.csv('table_location.csv')
-OrgUnitsHierarchy <- read.csv('Hierarchydata_fac.csv')
+indics <- get_unique(indics , 'indicator_ID')
 
+OrgUnitsHierarchy <- read.csv('HierarchyData.csv')
+OrgUnitsHierarchy <- get_unique(OrgUnitsHierarchy , 'Level5ID')
+
+data_fac <- subset(data_fac , orgUnit %in% OrgUnitsHierarchy$Level5ID)
+
+data_fac$dataElement <- as.character(data_fac$dataElement)
+data_fac$period <- as.Date(as.yearmon(data_fac$period, "%Y%m"))
+
+data_fac <- merge(data_fac , indics , by.x = 'dataElement' , by.y = 'indicator_ID' ,
+                      all.y = FALSE , all.x = FALSE)
+data_fac <- merge(data_fac , OrgUnitsHierarchy , by.x = 'orgUnit' , by.y = 'Level5ID'  ,
+                      all.x = FALSE , all.y = FALSE)
+
+qplot(data = data_fac , x = period , binwidth = 30) +
+  theme_bw()
+
+
+#### START HERE###
 
 org_x_datasets <- read.csv('OrgUnitxDataSets.csv')
 report_x_datasets <- read.csv('RepxDE.csv')
@@ -39,7 +54,7 @@ data_elements_x_orgunit <- subset(data_elements_x_orgunit ,select = -c(x,y))
 
 
 data_elements_x_orgunit <- merge(data_elements_x_orgunit , 
-                                 OrgUnitsHierarchy_unique , 
+                                 OrgUnitsHierarchy , 
                                  by.x = "org_unit_ID" ,
                                  by.y = "Level5ID" ,
                                  all.x = TRUE , all.y = FALSE)
@@ -52,62 +67,92 @@ data_elements_x_orgunit <- subset(data_elements_x_orgunit ,
 
 #load('NigeriaWD_indicmap.Rdata')
 
-malaria <- c("Children < 5 years with uncomplicated malaria - female","Individuals >= 5 years with uncomplicated malaria - female","Children < 5 years with severe malaria - female","Children < 5 years with uncomplicated malaria receiving ACT- male","Individuals >= 5 years with uncomplicated malaria - male","Individuals >= 5 years with uncomplicated malaria receiving ACT- male","Children < 5 years with severe malaria - male","Children < 5 years with uncomplicated malaria - male","Individuals >= 5 years with uncomplicated malaria receiving ACT- female","Children < 5 years with uncomplicated malaria receiving ACT- female","Malaria Death (IDSR)","Malaria  (IDSR)","Severe Malaria (IDSR)","Malaria(Pregnant women)(IDSR)","Malaria(Pregnant women) Death","Severe Malaria Death (IDSR)","Severe malaria","Malaria cases referred for further treatment","Clinical Malaria given ACT","Malaria cases referred for adverse drug reaction","Fever tested by Microscopy (for malaria parasites)","Confirmed uncomplicated malaria given other antimalaria","Confirmed uncomplicated malaria","Clinical Malaria","Pregnant women who received malaria IPT2","Pregnant women who received malaria IPT1","ADRs following antimalarials","Antimalaria Authentication Service","Malaria RDT tested positive","Malaria confirmed pregnant women","Pregnant women with clinical malaria","Malaria microscopy tested positive","Confirmed uncomplicated malaria given ACT")
+data_class <- read.csv('table_indicators.csv') 
 
-data_fac <- subset(data_fac , )
-
-
-
-malaCompl <- compleMonth(subset(data_fac , indicator_name %in% malaria))
-
-#load('NigeriaWD_indicmap.Rdata')
-
-data_fac_mal <- subset(data_fac , indicator_name %in% malaria)
-rm(data_fac)
-indics_mal <- subset(data_elements_x_orgunit , data_element %in% malaria)
-rm(data_elements_x_orgunit)
-save.image('NigeriaWD_malaria.Rdata')
-
-#load('NigeriaWD_malaria.Rdata')
-library(plyr)
-should_report <- ddply(indics_mal , .(Level2ID , data_element) , nrow)
-should_report <- subset(should_report , !is.na(Level2ID))
-colnames(should_report) <- c("Level2ID","data_element","should_report")
-
-reporting <- ddply(data_fac_mal , .(Level2ID , indicator_name , period) , 
-                   function(data) length(unique(data$orgUnit)),
-                   .progress = 'text')
-colnames(reporting) <- c("Level2ID","indicator_name","period","Reporting")
-
-
-coverage <- merge(should_report , reporting ,
-                  by.x = c("Level2ID","data_element") ,
-                  by.y = c("Level2ID","indicator_name") , 
-                  all.x = TRUE , all.y = TRUE)
-
-coverage$cov <- coverage$Reporting / coverage$should_report
-coverage <- subset(coverage , !is.na(should_report))
-state_dico <- subset(OrgUnitsHierarchy_unique , select = c(Level2 , Level2ID))
+state_dico <- subset(OrgUnitsHierarchy , select = c(Level2 , Level2ID))
 state_dico <- unique(state_dico)
-coverage <- merge(coverage , state_dico , by = 'Level2ID' , all.x = TRUE , all.y = FALSE)
 
-save.image('toplots.Rdata')
 
-coverage_plot <- subset(coverage , cov <= 1 & should_report > 50)
-ord_state <- subset(coverage_plot , select = c(Level2 , should_report))
-ord_state <- unique(ord_state)
-ord_state <- as.character(ord_state$Level2[order(ord_state$should_report)])
+make_coverage <- function(data, data_class, data_x_org, state_dico, theme,  
+                              categories,OrgUnitsHierarchy){
+  print('Getting Relevant data')
+  theme_data <- data_class[data_class[theme] == 1 & 
+                                  !is.na(data_class[theme]),]
+  print(nrow(theme_data))
+  theme_indicators <- theme_data$indicator_name
+  data_fac <- subset(data , indicator_name %in% theme_indicators)
+  print(nrow(data_fac))
+  indicators <- subset(data_x_org , data_element %in% theme_indicators)  
+  
+  print('Computing availability parameters')
+  should_report <- ddply(indicators , .(Level2ID , data_element) , nrow ,.progress = 'text')
+  should_report <- subset(should_report , !is.na(Level2ID))
+  colnames(should_report) <- c("Level2ID","data_element","should_report")
+  
+  reporting <- ddply(data_fac , .(Level2ID , indicator_name , period) , 
+                     function(data) length(unique(data$orgUnit)),
+                     .progress = 'text')
+  colnames(reporting) <- c("Level2ID","indicator_name","period","Reporting")
+  
+  coverage <- merge(should_report , reporting ,
+                    by.x = c("Level2ID","data_element") ,
+                    by.y = c("Level2ID","indicator_name") , 
+                    all.x = TRUE , all.y = TRUE)
+  coverage$cov <- coverage$Reporting / coverage$should_report
+  coverage <- subset(coverage , !is.na(should_report))
+  
+  #Coverage by state
+  print('Merging availability with states names')
+  coverage <- merge(coverage , state_dico , by = 'Level2ID' , all.x = TRUE , all.y = FALSE)
+  coverage <- subset(coverage , cov <= 1 & should_report > 50)
+  print('Ordering States')
+  ord_state <- subset(coverage , select = c(Level2 , should_report))
+  ord_state <- unique(ord_state)
+  ord_state <- as.character(ord_state$Level2[order(ord_state$should_report)])
+  coverage$Level2 <- factor(coverage$Level2 , levels = ord_state)
+  coverage <- merge(coverage, data_class , by.x = "data_element" , by.y ="indicator_name" ,
+                    all.x = TRUE , all.y=FALSE)
+  coverage
+}
 
-coverage_plot$Level2 <- factor(coverage_plot$Level2 ,  
-                               levels = ord_state)
+coverage <- make_coverage(data = data_fac , data_class = data_class , 
+                          data_x_org = data_elements_x_orgunit , 
+                          state_dico = state_dico , 
+                          theme = 'indicator_thematic_malaria' , 
+                          categories = 'malaria_sub' ,
+                          OrgUnitsHierarchy = OrgUnitsHierarchy)
 
-library(ggplot2)
-ggplot(data = coverage_plot  , aes(x = period , y =cov) ) + 
-  geom_rect(data = coverage_plot ,aes(fill = as.numeric(should_report)),
-            xmin = -Inf,xmax = Inf,
-            ymin = -Inf,ymax = Inf,
-            alpha = 0.3) +
-  geom_line(aes(col = data_element)) +
-  facet_wrap(~Level2) + theme_bw() + 
-  scale_fill_continuous(low="white", high="black" , limits=c(0,5000) ,
-                        guide = guide_legend(title = "Number of facilities in State"))
+
+#plotting availability
+
+plot_availability <- function(coverage , categories){
+  categories_list <- unique(coverage[ , categories])
+  for (i in 1:length(categories_list)){
+    cat <- as.character(categories_list[i])
+    coverage_plot <- coverage[as.character(coverage[,categories]) == cat , ]
+    print(cat)
+    print(nrow(coverage_plot))
+    a <- ggplot(data = coverage_plot  , aes(x = period , y =cov) ) + 
+      geom_rect(data = coverage_plot ,aes(fill = as.numeric(should_report)),
+                xmin = -Inf,xmax = Inf,
+                ymin = -Inf,ymax = Inf,
+                alpha = 0.3) +
+      geom_line(aes(col = data_element)) + 
+      scale_x_date(breaks = date_breaks("1 years"),
+                   minor_breaks = "3 months" ,
+                   labels = date_format("%y"))+
+      facet_wrap(~Level2) + theme_bw() +
+      scale_fill_continuous(low="white", high="black" , 
+                            guide = guide_legend(title = 
+                                                   "Number of facilities in State")) +
+      ggtitle(cat)
+    print(a)
+  }
+}
+
+pdf('malaria_plots.pdf' , width = 14)
+plot_availability(coverage = coverage , 
+                  categories = 'malaria_sub')
+dev.off()
+
+
